@@ -479,7 +479,7 @@ decode_lanman_negprot_rsp(struct TCP_Server_Info *server, NEGOTIATE_RSP *pSMBr)
 		 */
 		int val, seconds, remain, result;
 		struct timespec ts, utc;
-		utc = CURRENT_TIME;
+		utc.tv_sec = get_seconds();
 		ts = cnvrtDosUnixTm(rsp->SrvTime.Date,
 				    rsp->SrvTime.Time, 0);
 		cifs_dbg(FYI, "SrvTime %d sec since 1970 (utc: %d) diff: %d\n",
