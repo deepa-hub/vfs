@@ -1412,6 +1412,27 @@ static inline struct timespec current_fs_time_sec(struct super_block *sb)
 	return (struct timespec) { get_seconds(), 0 };
 }
 
+/* Place holder defines until it is safe to use timespec64
+ * in the vfs layer.
+ * timespec64 data type and functions will be used at that
+ * time directly by all filesystems and these defines will be deleted.
+ */
+static inline struct timespec64 vfs_time_to_timespec64(struct timespec inode_ts)
+{
+	return timespec_to_timespec64(inode_ts);
+}
+
+static inline struct timespec timespec64_to_vfs_time(struct timespec64 ts)
+{
+	return timespec64_to_timespec(ts);
+}
+
+
+#define vfs_time timespec
+
+#define vfs_time_compare timespec_compare
+#define vfs_time_equal   timespec_equal
+
 /*
  * Snapshotting support.
  */
