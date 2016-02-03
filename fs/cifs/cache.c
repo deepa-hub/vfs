@@ -221,8 +221,8 @@ const struct fscache_cookie_def cifs_fscache_super_index_def = {
  * Auxiliary data attached to CIFS inode within the cache
  */
 struct cifs_fscache_inode_auxdata {
-	struct timespec	last_write_time;
-	struct timespec	last_change_time;
+	struct timespec64	last_write_time;
+	struct timespec64	last_change_time;
 	u64		eof;
 };
 
@@ -259,8 +259,10 @@ cifs_fscache_inode_get_aux(const void *cookie_netfs_data, void *buffer,
 
 	memset(&auxdata, 0, sizeof(auxdata));
 	auxdata.eof = cifsi->server_eof;
-	auxdata.last_write_time = cifsi->vfs_inode.i_mtime;
-	auxdata.last_change_time = cifsi->vfs_inode.i_ctime;
+	auxdata.last_write_time =
+		vfs_time_to_timespec64(cifsi->vfs_inode.i_mtime);
+	auxdata.last_change_time =
+		vfs_time_to_timespec64(cifsi->vfs_inode.i_ctime);
 
 	if (maxbuf > sizeof(auxdata))
 		maxbuf = sizeof(auxdata);
@@ -283,8 +285,10 @@ fscache_checkaux cifs_fscache_inode_check_aux(void *cookie_netfs_data,
 
 	memset(&auxdata, 0, sizeof(auxdata));
 	auxdata.eof = cifsi->server_eof;
-	auxdata.last_write_time = cifsi->vfs_inode.i_mtime;
-	auxdata.last_change_time = cifsi->vfs_inode.i_ctime;
+	auxdata.last_write_time =
+		vfs_time_to_timespec64(cifsi->vfs_inode.i_mtime);
+	auxdata.last_change_time =
+		vfs_time_to_timespec64(cifsi->vfs_inode.i_ctime);
 
 	if (memcmp(data, &auxdata, datalen) != 0)
 		return FSCACHE_CHECKAUX_OBSOLETE;
