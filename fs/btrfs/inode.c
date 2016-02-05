@@ -5592,7 +5592,7 @@ static struct inode *new_simple_dir(struct super_block *s,
 	inode->i_mtime = current_fs_time(inode->i_sb);
 	inode->i_atime = inode->i_mtime;
 	inode->i_ctime = inode->i_mtime;
-	BTRFS_I(inode)->i_otime = inode->i_mtime;
+	BTRFS_I(inode)->i_otime = vfs_time_to_timespec64(inode->i_mtime);
 
 	return inode;
 }
@@ -6164,7 +6164,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
 	inode->i_mtime = current_fs_time(inode->i_sb);
 	inode->i_atime = inode->i_mtime;
 	inode->i_ctime = inode->i_mtime;
-	BTRFS_I(inode)->i_otime = inode->i_mtime;
+	BTRFS_I(inode)->i_otime = vfs_time_to_timespec64(inode->i_mtime);
 
 	inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
 				  struct btrfs_inode_item);
