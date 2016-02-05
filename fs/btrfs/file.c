@@ -1733,16 +1733,20 @@ out:
 static void update_time_for_write(struct inode *inode)
 {
 	struct timespec now;
+	struct timespec ts;
 
 	if (IS_NOCMTIME(inode))
 		return;
 
-	now = current_fs_time(inode->i_sb);
-	if (!timespec_equal(&inode->i_mtime, &now))
-		inode->i_mtime = now;
+	now = vfs_time_to_timespec(current_fs_time(inode->i_sb));
 
-	if (!timespec_equal(&inode->i_ctime, &now))
-		inode->i_ctime = now;
+	ts = vfs_time_to_timespec(inode->i_mtime);
+	if (!timespec_equal(&ts, &now))
+		inode->i_mtime = timespec_to_vfs_time(now);
+
+	ts = vfs_time_to_timespec(inode->i_mtime);
+	if (!timespec_equal(&ts, &now))
+		inode->i_ctime = timespec_to_vfs_time(now);
 
 	if (IS_I_VERSION(inode))
 		inode_inc_iversion(inode);
