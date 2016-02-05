@@ -1385,7 +1385,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
 	parent_root = BTRFS_I(parent_inode)->root;
 	record_root_in_trans(trans, parent_root);
 
-	cur_time = current_fs_time(parent_inode->i_sb);
+	cur_time = vfs_time_to_timespec(current_fs_time(parent_inode->i_sb));
 
 	/*
 	 * insert the directory item
