@@ -445,7 +445,7 @@ static noinline int create_subvol(struct inode *dir,
 	struct btrfs_root *root = BTRFS_I(dir)->root;
 	struct btrfs_root *new_root;
 	struct btrfs_block_rsv block_rsv;
-	struct timespec cur_time = current_fs_time(dir->i_sb);
+	struct timespec cur_time = vfs_time_to_timespec(current_fs_time(dir->i_sb));
 	struct inode *inode;
 	int ret;
 	int err;
@@ -5033,7 +5033,7 @@ static long _btrfs_ioctl_set_received_subvol(struct file *file,
 	struct btrfs_root *root = BTRFS_I(inode)->root;
 	struct btrfs_root_item *root_item = &root->root_item;
 	struct btrfs_trans_handle *trans;
-	struct timespec ct = current_fs_time(inode->i_sb);
+	struct timespec ct = vfs_time_to_timespec(current_fs_time(inode->i_sb));
 	int ret = 0;
 	int received_uuid_changed;
 
