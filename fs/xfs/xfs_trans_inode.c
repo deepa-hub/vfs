@@ -68,24 +68,28 @@ xfs_trans_ichgtime(
 	int			flags)
 {
 	struct inode		*inode = VFS_I(ip);
-	struct timespec		tv;
+	struct timespec		now;
+	struct timespec     ts;
 
 	ASSERT(tp);
 	ASSERT(xfs_isilocked(ip, XFS_ILOCK_EXCL));
 
-	tv = current_fs_time(inode->i_sb);
+	now = vfs_time_to_timespec(current_fs_time(inode->i_sb));
 
+	ts = vfs_time_to_timespec(inode->i_mtime);
 	if ((flags & XFS_ICHGTIME_MOD) &&
-	    !timespec_equal(&inode->i_mtime, &tv)) {
-		inode->i_mtime = tv;
-		ip->i_d.di_mtime.t_sec = tv.tv_sec;
-		ip->i_d.di_mtime.t_nsec = tv.tv_nsec;
+	    !timespec_equal(&ts, &now)) {
+		inode->i_mtime = timespec_to_vfs_time(now);
+		ip->i_d.di_mtime.t_sec = now.tv_sec;
+		ip->i_d.di_mtime.t_nsec = now.tv_nsec;
 	}
+
+	ts = vfs_time_to_timespec(inode->i_ctime);
 	if ((flags & XFS_ICHGTIME_CHG) &&
-	    !timespec_equal(&inode->i_ctime, &tv)) {
-		inode->i_ctime = tv;
-		ip->i_d.di_ctime.t_sec = tv.tv_sec;
-		ip->i_d.di_ctime.t_nsec = tv.tv_nsec;
+	    !timespec_equal(&ts, &now)) {
+		inode->i_ctime = timespec_to_vfs_time(now);
+		ip->i_d.di_ctime.t_sec = now.tv_sec;
+		ip->i_d.di_ctime.t_nsec = now.tv_nsec;
 	}
 }
 
