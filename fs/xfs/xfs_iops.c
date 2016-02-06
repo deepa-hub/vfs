@@ -973,7 +973,7 @@ xfs_vn_setattr(
 STATIC int
 xfs_vn_update_time(
 	struct inode		*inode,
-	struct timespec		*now,
+	struct vfs_time		*now,
 	int			flags)
 {
 	struct xfs_inode	*ip = XFS_I(inode);

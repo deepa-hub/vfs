@@ -765,7 +765,7 @@ xfs_ialloc(
 	xfs_inode_t	*ip;
 	uint		flags;
 	int		error;
-	struct timespec	tv;
+	struct vfs_time	tv;
 
 	/*
 	 * Call the space management code to pick
