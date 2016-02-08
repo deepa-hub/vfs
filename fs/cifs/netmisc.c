@@ -963,7 +963,8 @@ static const int total_days_of_prev_months[] = {
 struct timespec64 cnvrtDosUnixTm(__le16 le_date, __le16 le_time, int offset)
 {
 	struct timespec64 ts;
-	int sec, min, days, month, year;
+	long long sec;
+	int min, days, month, year;
 	u16 date = le16_to_cpu(le_date);
 	u16 time = le16_to_cpu(le_time);
 	SMB_TIME *st = (SMB_TIME *)&time;
@@ -974,7 +975,7 @@ struct timespec64 cnvrtDosUnixTm(__le16 le_date, __le16 le_time, int offset)
 	sec = 2 * st->TwoSeconds;
 	min = st->Minutes;
 	if ((sec > 59) || (min > 59))
-		cifs_dbg(VFS, "illegal time min %d sec %d\n", min, sec);
+		cifs_dbg(VFS, "illegal time min %d sec %lld\n", min, sec);
 	sec += (min * 60);
 	sec += 60 * 60 * st->Hours;
 	if (st->Hours > 24)
