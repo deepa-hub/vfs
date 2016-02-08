@@ -5942,7 +5942,7 @@ static int btrfs_dirty_inode(struct inode *inode)
  * This is a copy of file_update_time.  We need this so we can return error on
  * ENOSPC for updating the inode in the case of file write and mmap writes.
  */
-static int btrfs_update_time(struct inode *inode, struct timespec *now,
+static int btrfs_update_time(struct inode *inode, struct vfs_time *now,
 			     int flags)
 {
 	struct btrfs_root *root = BTRFS_I(inode)->root;
