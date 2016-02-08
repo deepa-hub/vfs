@@ -92,6 +92,7 @@ static void
 cifs_revalidate_cache(struct inode *inode, struct cifs_fattr *fattr)
 {
 	struct cifsInodeInfo *cifs_i = CIFS_I(inode);
+	struct timespec64 mtime;
 
 	cifs_dbg(FYI, "%s: revalidating inode %llu\n",
 		 __func__, cifs_i->uniqueid);
@@ -109,8 +110,9 @@ cifs_revalidate_cache(struct inode *inode, struct cifs_fattr *fattr)
 		return;
 	}
 
+	mtime = vfs_time_to_timespec64(inode->i_mtime);
 	 /* revalidate if mtime or size have changed */
-	if (timespec_equal(&inode->i_mtime, &fattr->cf_mtime) &&
+	if (timespec64_equal(&mtime, &fattr->cf_mtime) &&
 	    cifs_i->server_eof == fattr->cf_eof) {
 		cifs_dbg(FYI, "%s: inode %llu is unchanged\n",
 			 __func__, cifs_i->uniqueid);
@@ -159,9 +161,9 @@ cifs_fattr_to_inode(struct inode *inode, struct cifs_fattr *fattr)
 	cifs_revalidate_cache(inode, fattr);
 
 	spin_lock(&inode->i_lock);
-	inode->i_atime = fattr->cf_atime;
-	inode->i_mtime = fattr->cf_mtime;
-	inode->i_ctime = fattr->cf_ctime;
+	inode->i_atime = timespec64_to_vfs_time(fattr->cf_atime);
+	inode->i_mtime = timespec64_to_vfs_time(fattr->cf_mtime);
+	inode->i_ctime = timespec64_to_vfs_time(fattr->cf_ctime);
 	inode->i_rdev = fattr->cf_rdev;
 	cifs_nlink_fattr_to_inode(inode, fattr);
 	inode->i_uid = fattr->cf_uid;
@@ -321,7 +323,7 @@ cifs_create_dfs_fattr(struct cifs_fattr *fattr, struct super_block *sb)
 	fattr->cf_uid = cifs_sb->mnt_uid;
 	fattr->cf_gid = cifs_sb->mnt_gid;
 	fattr->cf_atime = fattr->cf_ctime =
-		fattr->cf_mtime = current_fs_time(sb);
+		fattr->cf_mtime = vfs_time_to_timespec64(current_fs_time(sb));
 	fattr->cf_nlink = 2;
 	fattr->cf_flags |= CIFS_FATTR_DFS_REFERRAL;
 }
@@ -597,7 +599,7 @@ cifs_all_info_to_fattr(struct cifs_fattr *fattr, FILE_ALL_INFO *info,
 	if (info->LastAccessTime)
 		fattr->cf_atime = cifs_NTtimeToUnix(info->LastAccessTime);
 	else
-		fattr->cf_atime = current_fs_time(sb);
+		fattr->cf_atime = vfs_time_to_timespec64(current_fs_time(sb));
 
 	fattr->cf_ctime = cifs_NTtimeToUnix(info->ChangeTime);
 	fattr->cf_mtime = cifs_NTtimeToUnix(info->LastWriteTime);
@@ -1066,15 +1068,15 @@ cifs_set_file_info(struct inode *inode, struct iattr *attrs, unsigned int xid,
 
 	if (attrs->ia_valid & ATTR_ATIME) {
 		set_time = true;
-		info_buf.LastAccessTime =
-			cpu_to_le64(cifs_UnixTimeToNT(attrs->ia_atime));
+		info_buf.LastAccessTime = cpu_to_le64(
+		    cifs_UnixTimeToNT(vfs_time_to_timespec64(attrs->ia_atime)));
 	} else
 		info_buf.LastAccessTime = 0;
 
 	if (attrs->ia_valid & ATTR_MTIME) {
 		set_time = true;
-		info_buf.LastWriteTime =
-		    cpu_to_le64(cifs_UnixTimeToNT(attrs->ia_mtime));
+		info_buf.LastWriteTime = cpu_to_le64(
+		    cifs_UnixTimeToNT(vfs_time_to_timespec64(attrs->ia_mtime)));
 	} else
 		info_buf.LastWriteTime = 0;
 
@@ -1086,8 +1088,8 @@ cifs_set_file_info(struct inode *inode, struct iattr *attrs, unsigned int xid,
 	 */
 	if (set_time && (attrs->ia_valid & ATTR_CTIME)) {
 		cifs_dbg(FYI, "CIFS - CTIME changed\n");
-		info_buf.ChangeTime =
-		    cpu_to_le64(cifs_UnixTimeToNT(attrs->ia_ctime));
+		info_buf.ChangeTime = cpu_to_le64(
+		    cifs_UnixTimeToNT(vfs_time_to_timespec64(attrs->ia_ctime)));
 	} else
 		info_buf.ChangeTime = 0;
 
@@ -2193,17 +2195,20 @@ cifs_setattr_unix(struct dentry *direntry, struct iattr *attrs)
 		args->gid = INVALID_GID; /* no change */
 
 	if (attrs->ia_valid & ATTR_ATIME)
-		args->atime = cifs_UnixTimeToNT(attrs->ia_atime);
+		args->atime = cifs_UnixTimeToNT(
+		    vfs_time_to_timespec64(attrs->ia_atime));
 	else
 		args->atime = NO_CHANGE_64;
 
 	if (attrs->ia_valid & ATTR_MTIME)
-		args->mtime = cifs_UnixTimeToNT(attrs->ia_mtime);
+		args->mtime = cifs_UnixTimeToNT(
+		    vfs_time_to_timespec64(attrs->ia_mtime));
 	else
 		args->mtime = NO_CHANGE_64;
 
 	if (attrs->ia_valid & ATTR_CTIME)
-		args->ctime = cifs_UnixTimeToNT(attrs->ia_ctime);
+		args->ctime = cifs_UnixTimeToNT(
+		    vfs_time_to_timespec64(attrs->ia_ctime));
 	else
 		args->ctime = NO_CHANGE_64;
 
