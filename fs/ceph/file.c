@@ -1497,6 +1497,7 @@ static int ceph_zero_partial_object(struct inode *inode,
 	struct ceph_inode_info *ci = ceph_inode(inode);
 	struct ceph_fs_client *fsc = ceph_inode_to_client(inode);
 	struct ceph_osd_request *req;
+	struct timespec ts;
 	int ret = 0;
 	loff_t zero = 0;
 	int op;
@@ -1520,8 +1521,9 @@ static int ceph_zero_partial_object(struct inode *inode,
 		goto out;
 	}
 
+	ts = vfs_time_to_timespec(inode->i_mtime);
 	ceph_osdc_build_request(req, offset, NULL, ceph_vino(inode).snap,
-				&inode->i_mtime);
+				&ts);
 
 	ret = ceph_osdc_start_request(&fsc->client->osdc, req, false);
 	if (!ret) {

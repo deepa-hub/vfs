@@ -594,6 +594,7 @@ void ceph_fill_file_time(struct inode *inode, int issued,
 			 struct timespec *mtime, struct timespec *atime)
 {
 	struct ceph_inode_info *ci = ceph_inode(inode);
+	struct timespec ts;
 	int warn = 0;
 
 	if (issued & (CEPH_CAP_FILE_EXCL|
@@ -601,38 +602,42 @@ void ceph_fill_file_time(struct inode *inode, int issued,
 		      CEPH_CAP_FILE_BUFFER|
 		      CEPH_CAP_AUTH_EXCL|
 		      CEPH_CAP_XATTR_EXCL)) {
-		if (timespec_compare(ctime, &inode->i_ctime) > 0) {
+		ts = vfs_time_to_timespec(inode->i_ctime);
+		if (timespec_compare(ctime, &ts) > 0) {
 			dout("ctime %ld.%09ld -> %ld.%09ld inc w/ cap\n",
-			     inode->i_ctime.tv_sec, inode->i_ctime.tv_nsec,
+			     ts.tv_sec, ts.tv_nsec,
 			     ctime->tv_sec, ctime->tv_nsec);
-			inode->i_ctime = *ctime;
+			inode->i_ctime = timespec_to_vfs_time(*ctime);
 		}
 		if (ceph_seq_cmp(time_warp_seq, ci->i_time_warp_seq) > 0) {
 			/* the MDS did a utimes() */
+			ts = vfs_time_to_timespec(inode->i_mtime);
 			dout("mtime %ld.%09ld -> %ld.%09ld "
 			     "tw %d -> %d\n",
-			     inode->i_mtime.tv_sec, inode->i_mtime.tv_nsec,
+			     ts.tv_sec, ts.tv_nsec,
 			     mtime->tv_sec, mtime->tv_nsec,
 			     ci->i_time_warp_seq, (int)time_warp_seq);
 
-			inode->i_mtime = *mtime;
-			inode->i_atime = *atime;
+			inode->i_mtime = timespec_to_vfs_time(*mtime);
+			inode->i_atime = timespec_to_vfs_time(*atime);
 			ci->i_time_warp_seq = time_warp_seq;
 		} else if (time_warp_seq == ci->i_time_warp_seq) {
 			/* nobody did utimes(); take the max */
-			if (timespec_compare(mtime, &inode->i_mtime) > 0) {
+			ts = vfs_time_to_timespec(inode->i_mtime);
+			if (timespec_compare(mtime, &ts) > 0) {
 				dout("mtime %ld.%09ld -> %ld.%09ld inc\n",
-				     inode->i_mtime.tv_sec,
-				     inode->i_mtime.tv_nsec,
+				     ts.tv_sec,
+				     ts.tv_nsec,
 				     mtime->tv_sec, mtime->tv_nsec);
-				inode->i_mtime = *mtime;
+				inode->i_mtime = timespec_to_vfs_time(*mtime);
 			}
-			if (timespec_compare(atime, &inode->i_atime) > 0) {
+			ts = vfs_time_to_timespec(inode->i_atime);
+			if (timespec_compare(atime, &ts) > 0) {
 				dout("atime %ld.%09ld -> %ld.%09ld inc\n",
-				     inode->i_atime.tv_sec,
-				     inode->i_atime.tv_nsec,
+				     ts.tv_sec,
+				     ts.tv_nsec,
 				     atime->tv_sec, atime->tv_nsec);
-				inode->i_atime = *atime;
+				inode->i_atime = timespec_to_vfs_time(*atime);
 			}
 		} else if (issued & CEPH_CAP_FILE_EXCL) {
 			/* we did a utimes(); ignore mds values */
@@ -642,9 +647,9 @@ void ceph_fill_file_time(struct inode *inode, int issued,
 	} else {
 		/* we have no write|excl caps; whatever the MDS says is true */
 		if (ceph_seq_cmp(time_warp_seq, ci->i_time_warp_seq) >= 0) {
-			inode->i_ctime = *ctime;
-			inode->i_mtime = *mtime;
-			inode->i_atime = *atime;
+			inode->i_ctime = timespec_to_vfs_time(*ctime);
+			inode->i_mtime = timespec_to_vfs_time(*mtime);
+			inode->i_atime = timespec_to_vfs_time(*atime);
 			ci->i_time_warp_seq = time_warp_seq;
 		} else {
 			warn = 1;
@@ -1776,6 +1781,8 @@ int ceph_setattr(struct dentry *dentry, struct iattr *attr)
 	struct ceph_mds_request *req;
 	struct ceph_mds_client *mdsc = ceph_sb_to_client(dentry->d_sb)->mdsc;
 	struct ceph_cap_flush *prealloc_cf;
+	struct timespec inode_ts;
+	struct timespec iattr_ts;
 	int issued;
 	int release = 0, dirtied = 0;
 	int mask = 0;
@@ -1862,45 +1869,49 @@ int ceph_setattr(struct dentry *dentry, struct iattr *attr)
 		}
 	}
 
+	inode_ts = vfs_time_to_timespec(inode->i_atime);
+	iattr_ts = vfs_time_to_timespec(attr->ia_atime);
 	if (ia_valid & ATTR_ATIME) {
 		dout("setattr %p atime %ld.%ld -> %ld.%ld\n", inode,
-		     inode->i_atime.tv_sec, inode->i_atime.tv_nsec,
-		     attr->ia_atime.tv_sec, attr->ia_atime.tv_nsec);
+		     inode_ts.tv_sec, inode_ts.tv_nsec,
+		     iattr_ts.tv_sec, iattr_ts.tv_nsec);
 		if (issued & CEPH_CAP_FILE_EXCL) {
 			ci->i_time_warp_seq++;
 			inode->i_atime = attr->ia_atime;
 			dirtied |= CEPH_CAP_FILE_EXCL;
 		} else if ((issued & CEPH_CAP_FILE_WR) &&
-			   timespec_compare(&inode->i_atime,
-					    &attr->ia_atime) < 0) {
+			   timespec_compare(&inode_ts,
+					    &iattr_ts) < 0) {
 			inode->i_atime = attr->ia_atime;
 			dirtied |= CEPH_CAP_FILE_WR;
 		} else if ((issued & CEPH_CAP_FILE_SHARED) == 0 ||
-			   !timespec_equal(&inode->i_atime, &attr->ia_atime)) {
+			   !timespec_equal(&inode_ts, &iattr_ts)) {
 			ceph_encode_timespec(&req->r_args.setattr.atime,
-					     &attr->ia_atime);
+					     &iattr_ts);
 			mask |= CEPH_SETATTR_ATIME;
 			release |= CEPH_CAP_FILE_CACHE | CEPH_CAP_FILE_RD |
 				CEPH_CAP_FILE_WR;
 		}
 	}
+	inode_ts = vfs_time_to_timespec(inode->i_mtime);
+	iattr_ts = vfs_time_to_timespec(attr->ia_mtime);
 	if (ia_valid & ATTR_MTIME) {
 		dout("setattr %p mtime %ld.%ld -> %ld.%ld\n", inode,
-		     inode->i_mtime.tv_sec, inode->i_mtime.tv_nsec,
-		     attr->ia_mtime.tv_sec, attr->ia_mtime.tv_nsec);
+		     inode_ts.tv_sec, inode_ts.tv_nsec,
+		     iattr_ts.tv_sec, iattr_ts.tv_nsec);
 		if (issued & CEPH_CAP_FILE_EXCL) {
 			ci->i_time_warp_seq++;
 			inode->i_mtime = attr->ia_mtime;
 			dirtied |= CEPH_CAP_FILE_EXCL;
 		} else if ((issued & CEPH_CAP_FILE_WR) &&
-			   timespec_compare(&inode->i_mtime,
-					    &attr->ia_mtime) < 0) {
+			   timespec_compare(&inode_ts,
+					    &iattr_ts) < 0) {
 			inode->i_mtime = attr->ia_mtime;
 			dirtied |= CEPH_CAP_FILE_WR;
 		} else if ((issued & CEPH_CAP_FILE_SHARED) == 0 ||
-			   !timespec_equal(&inode->i_mtime, &attr->ia_mtime)) {
+			   !timespec_equal(&inode_ts, &iattr_ts)) {
 			ceph_encode_timespec(&req->r_args.setattr.mtime,
-					     &attr->ia_mtime);
+					     &iattr_ts);
 			mask |= CEPH_SETATTR_MTIME;
 			release |= CEPH_CAP_FILE_SHARED | CEPH_CAP_FILE_RD |
 				CEPH_CAP_FILE_WR;
@@ -1929,12 +1940,14 @@ int ceph_setattr(struct dentry *dentry, struct iattr *attr)
 	}
 
 	/* these do nothing */
+	inode_ts = vfs_time_to_timespec(inode->i_ctime);
+	iattr_ts = vfs_time_to_timespec(attr->ia_ctime);
 	if (ia_valid & ATTR_CTIME) {
 		bool only = (ia_valid & (ATTR_SIZE|ATTR_MTIME|ATTR_ATIME|
 					 ATTR_MODE|ATTR_UID|ATTR_GID)) == 0;
 		dout("setattr %p ctime %ld.%ld -> %ld.%ld (%s)\n", inode,
-		     inode->i_ctime.tv_sec, inode->i_ctime.tv_nsec,
-		     attr->ia_ctime.tv_sec, attr->ia_ctime.tv_nsec,
+		     inode_ts.tv_sec, inode_ts.tv_nsec,
+		     iattr_ts.tv_sec, iattr_ts.tv_nsec,
 		     only ? "ctime only" : "ignored");
 		inode->i_ctime = attr->ia_ctime;
 		if (only) {

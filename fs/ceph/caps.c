@@ -1178,8 +1178,8 @@ static int __send_cap(struct ceph_mds_client *mdsc, struct ceph_cap *cap,
 	ci->i_reported_size = size;
 	max_size = ci->i_wanted_max_size;
 	ci->i_requested_max_size = max_size;
-	mtime = inode->i_mtime;
-	atime = inode->i_atime;
+	mtime = vfs_time_to_timespec(inode->i_mtime);
+	atime = vfs_time_to_timespec(inode->i_atime);
 	time_warp_seq = ci->i_time_warp_seq;
 	uid = inode->i_uid;
 	gid = inode->i_gid;
