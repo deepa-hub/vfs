@@ -147,6 +147,20 @@ static inline void ceph_encode_timespec(struct ceph_timespec *tv,
 	tv->tv_nsec = cpu_to_le32((u32)ts->tv_nsec);
 }
 
+static inline void ceph_decode_timespec64(struct timespec64 *ts,
+					const struct ceph_timespec *tv)
+{
+	ts->tv_sec = (s64)le32_to_cpu(tv->tv_sec);
+	ts->tv_nsec = (long)le32_to_cpu(tv->tv_nsec);
+}
+
+static inline void ceph_encode_timespec64(struct ceph_timespec *tv,
+					const struct timespec64 *ts)
+{
+	tv->tv_sec = cpu_to_le32((u32)ts->tv_sec);
+	tv->tv_nsec = cpu_to_le32((u32)ts->tv_nsec);
+}
+
 /*
  * sockaddr_storage <-> ceph_sockaddr
  */
