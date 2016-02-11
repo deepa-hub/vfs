@@ -479,6 +479,7 @@ static int writepage_nounlock(struct page *page, struct writeback_control *wbc)
 	struct ceph_fs_client *fsc;
 	struct ceph_osd_client *osdc;
 	struct ceph_snap_context *snapc, *oldest;
+	struct timespec64 ts;
 	loff_t page_off = page_offset(page);
 	loff_t snap_size = -1;
 	long writeback_stat;
@@ -540,11 +541,12 @@ static int writepage_nounlock(struct page *page, struct writeback_control *wbc)
 	ceph_readpage_to_fscache(inode, page);
 
 	set_page_writeback(page);
+	ts = vfs_time_to_timespec64(inode->i_mtime);
 	err = ceph_osdc_writepages(osdc, ceph_vino(inode),
 				   &ci->i_layout, snapc,
 				   page_off, len,
 				   truncate_seq, truncate_size,
-				   &inode->i_mtime, &page, 1);
+				   &ts, &page, 1);
 	if (err < 0) {
 		dout("writepage setting page/mapping error %d %p\n", err, page);
 		SetPageError(page);
@@ -699,6 +701,7 @@ static int ceph_writepages_start(struct address_space *mapping,
 	int rc = 0;
 	unsigned wsize = 1 << inode->i_blkbits;
 	struct ceph_osd_request *req = NULL;
+	struct timespec64 ts;
 	int do_sync = 0;
 	loff_t snap_size, i_size;
 	u64 truncate_size;
@@ -978,8 +981,9 @@ get_more_pages:
 		osd_req_op_extent_update(req, 0, len);
 
 		vino = ceph_vino(inode);
+		ts = vfs_time_to_timespec64(inode->i_mtime);
 		ceph_osdc_build_request(req, offset, snapc, vino.snap,
-					&inode->i_mtime);
+					&ts);
 
 		rc = ceph_osdc_start_request(&fsc->client->osdc, req, true);
 		BUG_ON(rc);
@@ -1465,6 +1469,7 @@ int ceph_uninline_data(struct file *filp, struct page *locked_page)
 	struct ceph_fs_client *fsc = ceph_inode_to_client(inode);
 	struct ceph_osd_request *req;
 	struct page *page = NULL;
+	struct timespec64 ts;
 	u64 len, inline_version;
 	int err = 0;
 	bool from_pagecache = false;
@@ -1528,7 +1533,8 @@ int ceph_uninline_data(struct file *filp, struct page *locked_page)
 		goto out;
 	}
 
-	ceph_osdc_build_request(req, 0, NULL, CEPH_NOSNAP, &inode->i_mtime);
+	ts = vfs_time_to_timespec64(inode->i_mtime);
+	ceph_osdc_build_request(req, 0, NULL, CEPH_NOSNAP, &ts);
 	err = ceph_osdc_start_request(&fsc->client->osdc, req, false);
 	if (!err)
 		err = ceph_osdc_wait_request(&fsc->client->osdc, req);
@@ -1572,7 +1578,7 @@ int ceph_uninline_data(struct file *filp, struct page *locked_page)
 			goto out_put;
 	}
 
-	ceph_osdc_build_request(req, 0, NULL, CEPH_NOSNAP, &inode->i_mtime);
+	ceph_osdc_build_request(req, 0, NULL, CEPH_NOSNAP, &ts);
 	err = ceph_osdc_start_request(&fsc->client->osdc, req, false);
 	if (!err)
 		err = ceph_osdc_wait_request(&fsc->client->osdc, req);
@@ -1622,6 +1628,7 @@ static int __ceph_pool_perm_get(struct ceph_inode_info *ci, u32 pool)
 	struct ceph_osd_request *rd_req = NULL, *wr_req = NULL;
 	struct rb_node **p, *parent;
 	struct ceph_pool_perm *perm;
+	struct timespec64 ts;
 	struct page **pages;
 	int err = 0, err2 = 0, have = 0;
 
@@ -1701,12 +1708,13 @@ static int __ceph_pool_perm_get(struct ceph_inode_info *ci, u32 pool)
 
 	osd_req_op_raw_data_in_pages(rd_req, 0, pages, PAGE_SIZE,
 				     0, false, true);
+	ts = vfs_time_to_timespec64(ci->vfs_inode.i_mtime);
 	ceph_osdc_build_request(rd_req, 0, NULL, CEPH_NOSNAP,
-				&ci->vfs_inode.i_mtime);
+				&ts);
 	err = ceph_osdc_start_request(&fsc->client->osdc, rd_req, false);
 
 	ceph_osdc_build_request(wr_req, 0, NULL, CEPH_NOSNAP,
-				&ci->vfs_inode.i_mtime);
+				&ts);
 	err2 = ceph_osdc_start_request(&fsc->client->osdc, wr_req, false);
 
 	if (!err)

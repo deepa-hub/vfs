@@ -593,9 +593,9 @@ int __ceph_finish_cap_snap(struct ceph_inode_info *ci,
 
 	BUG_ON(capsnap->writing);
 	capsnap->size = inode->i_size;
-	capsnap->mtime = inode->i_mtime;
-	capsnap->atime = inode->i_atime;
-	capsnap->ctime = inode->i_ctime;
+	capsnap->mtime = vfs_time_to_timespec64(inode->i_mtime);
+	capsnap->atime = vfs_time_to_timespec64(inode->i_atime);
+	capsnap->ctime = vfs_time_to_timespec64(inode->i_ctime);
 	capsnap->time_warp_seq = ci->i_time_warp_seq;
 	if (capsnap->dirty_pages) {
 		dout("finish_cap_snap %p cap_snap %p snapc %p %llu %s s=%llu "

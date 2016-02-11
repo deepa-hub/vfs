@@ -1721,7 +1721,7 @@ ceph_mdsc_create_request(struct ceph_mds_client *mdsc, int op, int mode)
 	init_completion(&req->r_safe_completion);
 	INIT_LIST_HEAD(&req->r_unsafe_item);
 
-	ktime_get_real_ts(&req->r_stamp);
+	getnstimeofday64(&req->r_stamp);
 
 	req->r_op = op;
 	req->r_direct_mode = mode;
@@ -2791,6 +2791,7 @@ static int encode_caps_cb(struct inode *inode, struct ceph_cap *cap,
 	struct ceph_inode_info *ci;
 	struct ceph_reconnect_state *recon_state = arg;
 	struct ceph_pagelist *pagelist = recon_state->pagelist;
+	struct timespec64 ts;
 	char *path;
 	int pathlen, err;
 	u64 pathbase;
@@ -2839,8 +2840,10 @@ static int encode_caps_cb(struct inode *inode, struct ceph_cap *cap,
 		rec.v1.wanted = cpu_to_le32(__ceph_caps_wanted(ci));
 		rec.v1.issued = cpu_to_le32(cap->issued);
 		rec.v1.size = cpu_to_le64(inode->i_size);
-		ceph_encode_timespec(&rec.v1.mtime, &inode->i_mtime);
-		ceph_encode_timespec(&rec.v1.atime, &inode->i_atime);
+		ts = vfs_time_to_timespec64(inode->i_mtime);
+		ceph_encode_timespec(&rec.v1.mtime, &ts);
+		ts = vfs_time_to_timespec64(inode->i_atime);
+		ceph_encode_timespec(&rec.v1.atime, &ts);
 		rec.v1.snaprealm = cpu_to_le64(ci->i_snap_realm->ino);
 		rec.v1.pathbase = cpu_to_le64(pathbase);
 		reclen = sizeof(rec.v1);

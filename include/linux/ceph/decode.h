@@ -4,6 +4,7 @@
 #include <linux/err.h>
 #include <linux/bug.h>
 #include <linux/time.h>
+#include <linux/fs.h>
 #include <asm/unaligned.h>
 
 #include <linux/ceph/types.h>
@@ -132,16 +133,16 @@ bad:
 }
 
 /*
- * struct ceph_timespec <-> struct timespec
+ * struct ceph_timespec <-> struct timespec64
  */
-static inline void ceph_decode_timespec(struct timespec *ts,
+static inline void ceph_decode_timespec(struct timespec64 *ts,
 					const struct ceph_timespec *tv)
 {
-	ts->tv_sec = (__kernel_time_t)le32_to_cpu(tv->tv_sec);
+	ts->tv_sec = (s64)le32_to_cpu(tv->tv_sec);
 	ts->tv_nsec = (long)le32_to_cpu(tv->tv_nsec);
 }
 static inline void ceph_encode_timespec(struct ceph_timespec *tv,
-					const struct timespec *ts)
+					const struct timespec64 *ts)
 {
 	tv->tv_sec = cpu_to_le32((u32)ts->tv_sec);
 	tv->tv_nsec = cpu_to_le32((u32)ts->tv_nsec);

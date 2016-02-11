@@ -25,7 +25,7 @@
 #include "cache.h"
 
 struct ceph_aux_inode {
-	struct timespec	mtime;
+	struct timespec64	mtime;
 	loff_t          size;
 };
 
@@ -105,7 +105,7 @@ static uint16_t ceph_fscache_inode_get_aux(const void *cookie_netfs_data,
 	const struct inode* inode = &ci->vfs_inode;
 
 	memset(&aux, 0, sizeof(aux));
-	aux.mtime = inode->i_mtime;
+	aux.mtime = vfs_time_to_timespec64(inode->i_mtime);
 	aux.size = i_size_read(inode);
 
 	memcpy(buffer, &aux, sizeof(aux));
@@ -131,7 +131,7 @@ static enum fscache_checkaux ceph_fscache_inode_check_aux(
 		return FSCACHE_CHECKAUX_OBSOLETE;
 
 	memset(&aux, 0, sizeof(aux));
-	aux.mtime = inode->i_mtime;
+	aux.mtime = vfs_time_to_timespec64(inode->i_mtime);
 	aux.size = i_size_read(inode);
 
 	if (memcmp(data, &aux, sizeof(aux)) != 0)

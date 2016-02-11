@@ -555,7 +555,7 @@ struct ceph_aio_request {
 	struct list_head osd_reqs;
 	unsigned num_reqs;
 	atomic_t pending_reqs;
-	struct timespec mtime;
+	struct timespec64 mtime;
 	struct ceph_cap_flush *prealloc_cf;
 };
 
@@ -783,10 +783,12 @@ ceph_direct_read_write(struct kiocb *iocb, struct iov_iter *iter,
 	int num_pages = 0;
 	int flags;
 	int ret;
-	struct timespec mtime = current_fs_time(inode->i_sb);
+	struct timespec64 mtime;
 	size_t count = iov_iter_count(iter);
 	loff_t pos = iocb->ki_pos;
 	bool write = iov_iter_rw(iter) == WRITE;
+
+	mtime = vfs_time_to_timespec64(current_fs_time(inode->i_sb));
 
 	if (write && ceph_snap(file_inode(file)) != CEPH_NOSNAP)
 		return -EROFS;
@@ -988,8 +990,10 @@ ceph_sync_write(struct kiocb *iocb, struct iov_iter *from, loff_t pos,
 	int flags;
 	int check_caps = 0;
 	int ret;
-	struct timespec mtime = current_fs_time(inode->i_sb);
+	struct timespec64 mtime;
 	size_t count = iov_iter_count(from);
+
+	mtime = vfs_time_to_timespec64(current_fs_time(inode->i_sb));
 
 	if (ceph_snap(file_inode(file)) != CEPH_NOSNAP)
 		return -EROFS;
@@ -1497,6 +1501,7 @@ static int ceph_zero_partial_object(struct inode *inode,
 	struct ceph_inode_info *ci = ceph_inode(inode);
 	struct ceph_fs_client *fsc = ceph_inode_to_client(inode);
 	struct ceph_osd_request *req;
+	struct timespec64 ts;
 	int ret = 0;
 	loff_t zero = 0;
 	int op;
@@ -1520,8 +1525,9 @@ static int ceph_zero_partial_object(struct inode *inode,
 		goto out;
 	}
 
+	ts = vfs_time_to_timespec64(inode->i_mtime);
 	ceph_osdc_build_request(req, offset, NULL, ceph_vino(inode).snap,
-				&inode->i_mtime);
+				&ts);
 
 	ret = ceph_osdc_start_request(&fsc->client->osdc, req, false);
 	if (!ret) {
