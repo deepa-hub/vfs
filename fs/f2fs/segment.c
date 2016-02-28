@@ -2051,6 +2051,7 @@ static int build_sit_info(struct f2fs_sb_info *sbi)
 {
 	struct f2fs_super_block *raw_super = F2FS_RAW_SUPER(sbi);
 	struct f2fs_checkpoint *ckpt = F2FS_CKPT(sbi);
+	struct timespec ts;
 	struct sit_info *sit_i;
 	unsigned int sit_segs, start;
 	char *src_bitmap, *dst_bitmap;
@@ -2119,7 +2120,8 @@ static int build_sit_info(struct f2fs_sb_info *sbi)
 	sit_i->dirty_sentries = 0;
 	sit_i->sents_per_block = SIT_ENTRY_PER_BLOCK;
 	sit_i->elapsed_time = le64_to_cpu(sbi->ckpt->elapsed_time);
-	sit_i->mounted_time = CURRENT_TIME_SEC.tv_sec;
+	ts = current_fs_time_sec(sbi->sb);
+	sit_i->mounted_time = ts.tv_sec;
 	mutex_init(&sit_i->sentry_lock);
 	return 0;
 }
