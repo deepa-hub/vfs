@@ -266,8 +266,8 @@ int set_attr(const char *file, struct hostfs_iattr *attrs, int fd)
 	/* Note: ctime is not handled */
 	if (attrs->ia_valid & (HOSTFS_ATTR_ATIME | HOSTFS_ATTR_MTIME)) {
 		err = stat_file(file, &st, fd);
-		attrs->ia_atime = st.atime;
-		attrs->ia_mtime = st.mtime;
+		attrs->ia_atime = timespec_to_vfs_time(st.atime);
+		attrs->ia_mtime = timespec_to_vfs_time(st.mtime);
 		if (err != 0)
 			return err;
 	}
