@@ -123,9 +123,9 @@ static void logfs_disk_to_inode(struct logfs_disk_inode *di, struct inode*inode)
 	i_gid_write(inode, be32_to_cpu(di->di_gid));
 	inode->i_size	= be64_to_cpu(di->di_size);
 	logfs_set_blocks(inode, be64_to_cpu(di->di_used_bytes));
-	inode->i_atime	= be64_to_timespec(di->di_atime);
-	inode->i_ctime	= be64_to_timespec(di->di_ctime);
-	inode->i_mtime	= be64_to_timespec(di->di_mtime);
+	inode->i_atime	= timespec_to_vfs_time(be64_to_timespec(di->di_atime));
+	inode->i_ctime	= timespec_to_vfs_time(be64_to_timespec(di->di_ctime));
+	inode->i_mtime	= timespec_to_vfs_time(be64_to_timespec(di->di_mtime));
 	set_nlink(inode, be32_to_cpu(di->di_refcount));
 	inode->i_generation = be32_to_cpu(di->di_generation);
 
@@ -160,9 +160,9 @@ static void logfs_inode_to_disk(struct inode *inode, struct logfs_disk_inode*di)
 	di->di_gid	= cpu_to_be32(i_gid_read(inode));
 	di->di_size	= cpu_to_be64(i_size_read(inode));
 	di->di_used_bytes = cpu_to_be64(li->li_used_bytes);
-	di->di_atime	= timespec_to_be64(inode->i_atime);
-	di->di_ctime	= timespec_to_be64(inode->i_ctime);
-	di->di_mtime	= timespec_to_be64(inode->i_mtime);
+	di->di_atime	= timespec_to_be64(vfs_time_to_timespec(inode->i_atime));
+	di->di_ctime	= timespec_to_be64(vfs_time_to_timespec(inode->i_ctime));
+	di->di_mtime	= timespec_to_be64(vfs_time_to_timespec(inode->i_mtime));
 	di->di_refcount	= cpu_to_be32(inode->i_nlink);
 	di->di_generation = cpu_to_be32(inode->i_generation);
 
