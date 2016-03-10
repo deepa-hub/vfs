@@ -207,8 +207,8 @@ static uint16_t nfs_fscache_inode_get_aux(const void *cookie_netfs_data,
 
 	memset(&auxdata, 0, sizeof(auxdata));
 	auxdata.size = nfsi->vfs_inode.i_size;
-	auxdata.mtime = nfsi->vfs_inode.i_mtime;
-	auxdata.ctime = nfsi->vfs_inode.i_ctime;
+	auxdata.mtime = vfs_time_to_timespec(nfsi->vfs_inode.i_mtime);
+	auxdata.ctime = vfs_time_to_timespec(nfsi->vfs_inode.i_ctime);
 
 	if (NFS_SERVER(&nfsi->vfs_inode)->nfs_client->rpc_ops->version == 4)
 		auxdata.change_attr = nfsi->vfs_inode.i_version;
@@ -239,8 +239,8 @@ enum fscache_checkaux nfs_fscache_inode_check_aux(void *cookie_netfs_data,
 
 	memset(&auxdata, 0, sizeof(auxdata));
 	auxdata.size = nfsi->vfs_inode.i_size;
-	auxdata.mtime = nfsi->vfs_inode.i_mtime;
-	auxdata.ctime = nfsi->vfs_inode.i_ctime;
+	auxdata.mtime = vfs_time_to_timespec(nfsi->vfs_inode.i_mtime);
+	auxdata.ctime = vfs_time_to_timespec(nfsi->vfs_inode.i_ctime);
 
 	if (NFS_SERVER(&nfsi->vfs_inode)->nfs_client->rpc_ops->version == 4)
 		auxdata.change_attr = nfsi->vfs_inode.i_version;
