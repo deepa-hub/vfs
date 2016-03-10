@@ -250,8 +250,8 @@ fill_pre_wcc(struct svc_fh *fhp)
 
 	inode = d_inode(fhp->fh_dentry);
 	if (!fhp->fh_pre_saved) {
-		fhp->fh_pre_mtime = inode->i_mtime;
-		fhp->fh_pre_ctime = inode->i_ctime;
+		fhp->fh_pre_mtime = vfs_time_to_timespec(inode->i_mtime);
+		fhp->fh_pre_ctime = vfs_time_to_timespec(inode->i_ctime);
 		fhp->fh_pre_size  = inode->i_size;
 		fhp->fh_pre_change = inode->i_version;
 		fhp->fh_pre_saved = true;
