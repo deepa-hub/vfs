@@ -200,7 +200,7 @@ static int pstore_unlink(struct inode *dir, struct dentry *dentry)
 
 	if (p->psi->erase)
 		p->psi->erase(p->type, p->id, p->count,
-			      d_inode(dentry)->i_ctime, p->psi);
+			      vfs_time_to_timespec(d_inode(dentry)->i_ctime), p->psi);
 	else
 		return -EPERM;
 
@@ -389,7 +389,7 @@ int pstore_mkfile(enum pstore_type_id type, char *psname, u64 id, int count,
 	inode->i_private = private;
 
 	if (time.tv_sec)
-		inode->i_mtime = inode->i_ctime = time;
+		inode->i_mtime = inode->i_ctime = timespec_to_vfs_time(time);
 
 	d_add(dentry, inode);
 
