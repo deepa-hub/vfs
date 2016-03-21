@@ -1293,6 +1293,7 @@ static int udf_read_inode(struct inode *inode, bool hidden_inode)
 	struct udf_inode_info *iinfo = UDF_I(inode);
 	struct udf_sb_info *sbi = UDF_SB(inode->i_sb);
 	struct kernel_lb_addr *iloc = &iinfo->i_location;
+	struct timespec ts;
 	unsigned int link_count;
 	unsigned int indirections = 0;
 	int bs = inode->i_sb->s_blocksize;
@@ -1456,15 +1457,18 @@ reread:
 		inode->i_blocks = le64_to_cpu(fe->logicalBlocksRecorded) <<
 			(inode->i_sb->s_blocksize_bits - 9);
 
-		if (!udf_disk_stamp_to_time(&inode->i_atime, fe->accessTime))
-			inode->i_atime = sbi->s_record_time;
+		ts = vfs_time_to_timespec(inode->i_atime);
+		if (!udf_disk_stamp_to_time(&ts, fe->accessTime))
+			inode->i_atime = timespec_to_vfs_time(sbi->s_record_time);
 
-		if (!udf_disk_stamp_to_time(&inode->i_mtime,
+		ts = vfs_time_to_timespec(inode->i_mtime);
+		if (!udf_disk_stamp_to_time(&ts,
 					    fe->modificationTime))
-			inode->i_mtime = sbi->s_record_time;
+			inode->i_mtime = timespec_to_vfs_time(sbi->s_record_time);
 
-		if (!udf_disk_stamp_to_time(&inode->i_ctime, fe->attrTime))
-			inode->i_ctime = sbi->s_record_time;
+		ts = vfs_time_to_timespec(inode->i_ctime);
+		if (!udf_disk_stamp_to_time(&ts, fe->attrTime))
+			inode->i_ctime = timespec_to_vfs_time(sbi->s_record_time);
 
 		iinfo->i_unique = le64_to_cpu(fe->uniqueID);
 		iinfo->i_lenEAttr = le32_to_cpu(fe->lengthExtendedAttr);
@@ -1474,18 +1478,21 @@ reread:
 		inode->i_blocks = le64_to_cpu(efe->logicalBlocksRecorded) <<
 		    (inode->i_sb->s_blocksize_bits - 9);
 
-		if (!udf_disk_stamp_to_time(&inode->i_atime, efe->accessTime))
-			inode->i_atime = sbi->s_record_time;
+		ts = vfs_time_to_timespec(inode->i_atime);
+		if (!udf_disk_stamp_to_time(&ts, efe->accessTime))
+			inode->i_atime = timespec_to_vfs_time(sbi->s_record_time);
 
-		if (!udf_disk_stamp_to_time(&inode->i_mtime,
+		ts = vfs_time_to_timespec(inode->i_mtime);
+		if (!udf_disk_stamp_to_time(&ts,
 					    efe->modificationTime))
-			inode->i_mtime = sbi->s_record_time;
+			inode->i_mtime = timespec_to_vfs_time(sbi->s_record_time);
 
 		if (!udf_disk_stamp_to_time(&iinfo->i_crtime, efe->createTime))
 			iinfo->i_crtime = sbi->s_record_time;
 
-		if (!udf_disk_stamp_to_time(&inode->i_ctime, efe->attrTime))
-			inode->i_ctime = sbi->s_record_time;
+		ts = vfs_time_to_timespec(inode->i_ctime);
+		if (!udf_disk_stamp_to_time(&ts, efe->attrTime))
+			inode->i_ctime = timespec_to_vfs_time(sbi->s_record_time);
 
 		iinfo->i_unique = le64_to_cpu(efe->uniqueID);
 		iinfo->i_lenEAttr = le32_to_cpu(efe->lengthExtendedAttr);
@@ -1732,9 +1739,9 @@ static int udf_update_inode(struct inode *inode, int do_sync)
 		       inode->i_sb->s_blocksize - sizeof(struct fileEntry));
 		fe->logicalBlocksRecorded = cpu_to_le64(lb_recorded);
 
-		udf_time_to_disk_stamp(&fe->accessTime, inode->i_atime);
-		udf_time_to_disk_stamp(&fe->modificationTime, inode->i_mtime);
-		udf_time_to_disk_stamp(&fe->attrTime, inode->i_ctime);
+		udf_time_to_disk_stamp(&fe->accessTime, vfs_time_to_timespec(inode->i_atime));
+		udf_time_to_disk_stamp(&fe->modificationTime, vfs_time_to_timespec(inode->i_mtime));
+		udf_time_to_disk_stamp(&fe->attrTime, vfs_time_to_timespec(inode->i_ctime));
 		memset(&(fe->impIdent), 0, sizeof(struct regid));
 		strcpy(fe->impIdent.ident, UDF_ID_DEVELOPER);
 		fe->impIdent.identSuffix[0] = UDF_OS_CLASS_UNIX;
@@ -1756,22 +1763,22 @@ static int udf_update_inode(struct inode *inode, int do_sync)
 		if (iinfo->i_crtime.tv_sec > inode->i_atime.tv_sec ||
 		    (iinfo->i_crtime.tv_sec == inode->i_atime.tv_sec &&
 		     iinfo->i_crtime.tv_nsec > inode->i_atime.tv_nsec))
-			iinfo->i_crtime = inode->i_atime;
+			iinfo->i_crtime = vfs_time_to_timespec(inode->i_atime);
 
 		if (iinfo->i_crtime.tv_sec > inode->i_mtime.tv_sec ||
 		    (iinfo->i_crtime.tv_sec == inode->i_mtime.tv_sec &&
 		     iinfo->i_crtime.tv_nsec > inode->i_mtime.tv_nsec))
-			iinfo->i_crtime = inode->i_mtime;
+			iinfo->i_crtime = vfs_time_to_timespec(inode->i_mtime);
 
 		if (iinfo->i_crtime.tv_sec > inode->i_ctime.tv_sec ||
 		    (iinfo->i_crtime.tv_sec == inode->i_ctime.tv_sec &&
 		     iinfo->i_crtime.tv_nsec > inode->i_ctime.tv_nsec))
-			iinfo->i_crtime = inode->i_ctime;
+			iinfo->i_crtime = vfs_time_to_timespec(inode->i_ctime);
 
-		udf_time_to_disk_stamp(&efe->accessTime, inode->i_atime);
-		udf_time_to_disk_stamp(&efe->modificationTime, inode->i_mtime);
+		udf_time_to_disk_stamp(&efe->accessTime, vfs_time_to_timespec(inode->i_atime));
+		udf_time_to_disk_stamp(&efe->modificationTime, vfs_time_to_timespec(inode->i_mtime));
 		udf_time_to_disk_stamp(&efe->createTime, iinfo->i_crtime);
-		udf_time_to_disk_stamp(&efe->attrTime, inode->i_ctime);
+		udf_time_to_disk_stamp(&efe->attrTime, vfs_time_to_timespec(inode->i_ctime));
 
 		memset(&(efe->impIdent), 0, sizeof(struct regid));
 		strcpy(efe->impIdent.ident, UDF_ID_DEVELOPER);
