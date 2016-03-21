@@ -297,7 +297,7 @@ static int create_default_filesystem(struct ubifs_info *c)
 	ino->ch.node_type = UBIFS_INO_NODE;
 	ino->creat_sqnum = cpu_to_le64(++c->max_sqnum);
 	ino->nlink = cpu_to_le32(2);
-	tmp_le64 = cpu_to_le64(CURRENT_TIME_SEC.tv_sec);
+	tmp_le64 = cpu_to_le64(current_fs_time_sec(c->vfs_sb).tv_sec);
 	ino->atime_sec   = tmp_le64;
 	ino->ctime_sec   = tmp_le64;
 	ino->mtime_sec   = tmp_le64;
