@@ -39,6 +39,7 @@ static struct kernfs_iattrs *kernfs_iattrs(struct kernfs_node *kn)
 	static DEFINE_MUTEX(iattr_mutex);
 	struct kernfs_iattrs *ret;
 	struct iattr *iattrs;
+	struct timespec ts;
 
 	mutex_lock(&iattr_mutex);
 
@@ -55,7 +56,8 @@ static struct kernfs_iattrs *kernfs_iattrs(struct kernfs_node *kn)
 	iattrs->ia_uid = GLOBAL_ROOT_UID;
 	iattrs->ia_gid = GLOBAL_ROOT_GID;
 
-	ktime_get_real_ts(&iattrs->ia_atime);
+	ktime_get_real_ts(&ts);
+	iattrs->ia_atime = timespec_to_vfs_time(ts);
 	iattrs->ia_mtime = iattrs->ia_atime;
 	iattrs->ia_ctime = iattrs->ia_atime;
 
