@@ -73,12 +73,12 @@ xfs_trans_ichgtime(
 	ASSERT(tp);
 	ASSERT(xfs_isilocked(ip, XFS_ILOCK_EXCL));
 
-	tv = current_fs_time(inode->i_sb);
+	tv = vfs_time_to_timespec(current_fs_time(inode->i_sb));
 
 	if (flags & XFS_ICHGTIME_MOD)
-		inode->i_mtime = tv;
+		inode->i_mtime = timespec_to_vfs_time(tv);
 	if (flags & XFS_ICHGTIME_CHG)
-		inode->i_ctime = tv;
+		inode->i_ctime = timespec_to_vfs_time(tv);
 }
 
 /*
