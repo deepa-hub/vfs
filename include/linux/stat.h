@@ -27,9 +27,9 @@ struct kstat {
 	kgid_t		gid;
 	dev_t		rdev;
 	loff_t		size;
-	struct timespec  atime;
-	struct timespec	mtime;
-	struct timespec	ctime;
+	struct timespec64 atime;
+	struct timespec64 mtime;
+	struct timespec64 ctime;
 	unsigned long	blksize;
 	unsigned long long	blocks;
 };

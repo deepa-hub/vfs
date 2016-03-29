@@ -192,7 +192,7 @@ int notify_change(struct dentry * dentry, struct iattr * attr, struct inode **de
 	struct inode *inode = dentry->d_inode;
 	umode_t mode = inode->i_mode;
 	int error;
-	struct timespec now;
+	struct timespec64 now;
 	unsigned int ia_valid = attr->ia_valid;
 
 	WARN_ON_ONCE(!inode_is_locked(inode));

@@ -1538,7 +1538,7 @@ EXPORT_SYMBOL(bmap);
  * passed since the last atime update.
  */
 static int relatime_need_update(struct vfsmount *mnt, struct inode *inode,
-			     struct timespec now)
+			     struct timespec64 now)
 {
 
 	if (!(mnt->mnt_flags & MNT_RELATIME))
@@ -1546,12 +1546,12 @@ static int relatime_need_update(struct vfsmount *mnt, struct inode *inode,
 	/*
 	 * Is mtime younger than atime? If yes, update atime:
 	 */
-	if (timespec_compare(&inode->i_mtime, &inode->i_atime) >= 0)
+	if (timespec64_compare(&inode->i_mtime, &inode->i_atime) >= 0)
 		return 1;
 	/*
 	 * Is ctime younger than atime? If yes, update atime:
 	 */
-	if (timespec_compare(&inode->i_ctime, &inode->i_atime) >= 0)
+	if (timespec64_compare(&inode->i_ctime, &inode->i_atime) >= 0)
 		return 1;
 
 	/*
@@ -1571,13 +1571,13 @@ int generic_update_time(struct inode *inode, struct timespec *time, int flags)
 	int iflags = I_DIRTY_TIME;
 
 	if (flags & S_ATIME)
-		inode->i_atime = *time;
+		inode->i_atime = timespec_to_timespec64(*time);
 	if (flags & S_VERSION)
 		inode_inc_iversion(inode);
 	if (flags & S_CTIME)
-		inode->i_ctime = *time;
+		inode->i_ctime = timespec_to_timespec64(*time);
 	if (flags & S_MTIME)
-		inode->i_mtime = *time;
+		inode->i_mtime = timespec_to_timespec64(*time);
 
 	if (!(inode->i_sb->s_flags & MS_LAZYTIME) || (flags & S_VERSION))
 		iflags |= I_DIRTY_SYNC;
@@ -1590,14 +1590,15 @@ EXPORT_SYMBOL(generic_update_time);
  * This does the actual work of updating an inodes time or version.  Must have
  * had called mnt_want_write() before calling this.
  */
-static int update_time(struct inode *inode, struct timespec *time, int flags)
+static int update_time(struct inode *inode, struct timespec64 *time, int flags)
 {
 	int (*update_time)(struct inode *, struct timespec *, int);
+	struct timespec ts = timespec64_to_timespec(*time);
 
 	update_time = inode->i_op->update_time ? inode->i_op->update_time :
 		generic_update_time;
 
-	return update_time(inode, time, flags);
+	return update_time(inode, &ts, flags);
 }
 
 /**
@@ -1612,7 +1613,7 @@ static int update_time(struct inode *inode, struct timespec *time, int flags)
 bool atime_needs_update(const struct path *path, struct inode *inode)
 {
 	struct vfsmount *mnt = path->mnt;
-	struct timespec now;
+	struct timespec64 now;
 
 	if (inode->i_flags & S_NOATIME)
 		return false;
@@ -1631,7 +1632,7 @@ bool atime_needs_update(const struct path *path, struct inode *inode)
 	if (!relatime_need_update(mnt, inode, now))
 		return false;
 
-	if (timespec_equal(&inode->i_atime, &now))
+	if (timespec64_equal(&inode->i_atime, &now))
 		return false;
 
 	return true;
@@ -1641,7 +1642,7 @@ void touch_atime(const struct path *path)
 {
 	struct vfsmount *mnt = path->mnt;
 	struct inode *inode = d_inode(path->dentry);
-	struct timespec now;
+	struct timespec64 now;
 
 	if (!atime_needs_update(path, inode))
 		return;
@@ -1776,7 +1777,7 @@ EXPORT_SYMBOL(file_remove_privs);
 int file_update_time(struct file *file)
 {
 	struct inode *inode = file_inode(file);
-	struct timespec now;
+	struct timespec64 now;
 	int sync_it = 0;
 	int ret;
 
@@ -1785,10 +1786,10 @@ int file_update_time(struct file *file)
 		return 0;
 
 	now = current_fs_time(inode->i_sb);
-	if (!timespec_equal(&inode->i_mtime, &now))
+	if (!timespec64_equal(&inode->i_mtime, &now))
 		sync_it = S_MTIME;
 
-	if (!timespec_equal(&inode->i_ctime, &now))
+	if (!timespec64_equal(&inode->i_ctime, &now))
 		sync_it |= S_CTIME;
 
 	if (IS_I_VERSION(inode))
