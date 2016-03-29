@@ -1539,9 +1539,9 @@ void lease_get_mtime(struct inode *inode, struct timespec *time)
 	}
 
 	if (has_lease)
-		*time = current_fs_time(inode->i_sb);
+		*time = timespec64_to_timespec(current_fs_time(inode->i_sb));
 	else
-		*time = inode->i_mtime;
+		*time = timespec64_to_timespec(inode->i_mtime);
 }
 
 EXPORT_SYMBOL(lease_get_mtime);

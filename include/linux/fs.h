@@ -252,9 +252,9 @@ struct iattr {
 	kuid_t		ia_uid;
 	kgid_t		ia_gid;
 	loff_t		ia_size;
-	struct timespec	ia_atime;
-	struct timespec	ia_mtime;
-	struct timespec	ia_ctime;
+	struct timespec64	ia_atime;
+	struct timespec64	ia_mtime;
+	struct timespec64	ia_ctime;
 
 	/*
 	 * Not an attribute, but an auxiliary info for filesystems wanting to
@@ -621,9 +621,9 @@ struct inode {
 	};
 	dev_t			i_rdev;
 	loff_t			i_size;
-	struct timespec		i_atime;
-	struct timespec		i_mtime;
-	struct timespec		i_ctime;
+	struct timespec64	i_atime;
+	struct timespec64	i_mtime;
+	struct timespec64	i_ctime;
 	spinlock_t		i_lock;	/* i_blocks, i_bytes, maybe i_size */
 	unsigned short          i_bytes;
 	unsigned int		i_blkbits;
@@ -1428,11 +1428,11 @@ struct super_block {
 	struct list_head	s_inodes;	/* all inodes */
 };
 
-extern struct timespec current_fs_time(struct super_block *sb);
+extern struct timespec64 current_fs_time(struct super_block *sb);
 
-static inline struct timespec current_fs_time_sec(struct super_block *sb)
+static inline struct timespec64 current_fs_time_sec(struct super_block *sb)
 {
-	return (struct timespec) { get_seconds(), 0 };
+	return (struct timespec64) { ktime_get_real_seconds(), 0 };
 }
 
 /* Place holder defines to ensure safe transition to timespec64
@@ -1440,14 +1440,14 @@ static inline struct timespec current_fs_time_sec(struct super_block *sb)
  * These can be deleted after all filesystems and vfs are switched
  * over to using 64 bit time.
  */
-static inline struct timespec vfs_time_to_timespec(struct timespec inode_ts)
+static inline struct timespec vfs_time_to_timespec(struct timespec64 inode_ts)
 {
-	return inode_ts;
+	return timespec64_to_timespec(inode_ts);
 }
 
-static inline struct timespec timespec_to_vfs_time(struct timespec ts)
+static inline struct timespec64 timespec_to_vfs_time(struct timespec ts)
 {
-	return ts;
+	return timespec_to_timespec64(ts);
 }
 
 /*

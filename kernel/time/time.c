@@ -237,9 +237,9 @@ SYSCALL_DEFINE1(adjtimex, struct timex __user *, txc_p)
  * Return the current time truncated to the time granularity supported by
  * the fs.
  */
-struct timespec current_fs_time(struct super_block *sb)
+struct timespec64 current_fs_time(struct super_block *sb)
 {
-	struct timespec now = current_kernel_time();
+	struct timespec64 now = current_kernel_time64();
 	return timespec_trunc(now, sb->s_time_gran);
 }
 EXPORT_SYMBOL(current_fs_time);
@@ -294,7 +294,7 @@ EXPORT_SYMBOL(jiffies_to_usecs);
  * Truncate a timespec to a granularity. Always rounds down. gran must
  * not be 0 nor greater than a second (NSEC_PER_SEC, or 10^9 ns).
  */
-struct timespec timespec_trunc(struct timespec t, unsigned gran)
+struct timespec64 timespec_trunc(struct timespec64 t, unsigned gran)
 {
 	/* Avoid division in the common cases 1 ns and 1 s. */
 	if (gran == 1) {

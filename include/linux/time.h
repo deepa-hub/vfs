@@ -123,7 +123,7 @@ static inline bool timeval_valid(const struct timeval *tv)
 	return true;
 }
 
-extern struct timespec timespec_trunc(struct timespec t, unsigned gran);
+extern struct timespec64 timespec_trunc(struct timespec64 t, unsigned gran);
 
 /*
  * Validates if a timespec/timeval used to inject a time offset is valid.
@@ -174,7 +174,7 @@ extern int do_getitimer(int which, struct itimerval *value);
 
 extern unsigned int alarm_setitimer(unsigned int seconds);
 
-extern long do_utimes(int dfd, const char __user *filename, struct timespec *times, int flags);
+extern long do_utimes(int dfd, const char __user *filename, struct timespec64 *times, int flags);
 
 struct tms;
 extern void do_sys_times(struct tms *);
