@@ -230,8 +230,8 @@ static inline void *ubifs_idx_key(const struct ubifs_info *c,
  */
 static inline struct timespec ubifs_current_time(struct inode *inode)
 {
-	return (inode->i_sb->s_time_gran < NSEC_PER_SEC) ?
-		current_fs_time(inode->i_sb) : current_fs_time_sec(inode->i_sb);
+	return vfs_time_to_timespec((inode->i_sb->s_time_gran < NSEC_PER_SEC) ?
+		current_fs_time(inode->i_sb) : current_fs_time_sec(inode->i_sb));
 }
 
 /**

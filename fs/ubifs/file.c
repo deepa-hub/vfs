@@ -1181,7 +1181,7 @@ static int do_truncation(struct ubifs_info *c, struct inode *inode,
 	mutex_lock(&ui->ui_mutex);
 	ui->ui_size = inode->i_size;
 	/* Truncation changes inode [mc]time */
-	inode->i_mtime = inode->i_ctime = ubifs_current_time(inode);
+	inode->i_mtime = inode->i_ctime = timespec_to_vfs_time(ubifs_current_time(inode));
 	/* Other attributes may be changed at the same time as well */
 	do_attr_changes(inode, attr);
 	err = ubifs_jnl_truncate(c, inode, old_size, new_size);
@@ -1228,7 +1228,7 @@ static int do_setattr(struct ubifs_info *c, struct inode *inode,
 	mutex_lock(&ui->ui_mutex);
 	if (attr->ia_valid & ATTR_SIZE) {
 		/* Truncation changes inode [mc]time */
-		inode->i_mtime = inode->i_ctime = ubifs_current_time(inode);
+		inode->i_mtime = inode->i_ctime = timespec_to_vfs_time(ubifs_current_time(inode));
 		/* 'truncate_setsize()' changed @i_size, update @ui_size */
 		ui->ui_size = inode->i_size;
 	}
@@ -1348,8 +1348,11 @@ out:
 static inline int mctime_update_needed(const struct inode *inode,
 				       const struct timespec *now)
 {
-	if (!timespec_equal(&inode->i_mtime, now) ||
-	    !timespec_equal(&inode->i_ctime, now))
+	struct timespec mtime = vfs_time_to_timespec(inode->i_mtime);
+	struct timespec ctime = vfs_time_to_timespec(inode->i_ctime);
+
+	if (!timespec_equal(&mtime, now) ||
+	    !timespec_equal(&ctime, now))
 		return 1;
 	return 0;
 }
@@ -1419,7 +1422,7 @@ static int update_mctime(struct inode *inode)
 			return err;
 
 		mutex_lock(&ui->ui_mutex);
-		inode->i_mtime = inode->i_ctime = ubifs_current_time(inode);
+		inode->i_mtime = inode->i_ctime = timespec_to_vfs_time(ubifs_current_time(inode));
 		release = ui->dirty;
 		mark_inode_dirty_sync(inode);
 		mutex_unlock(&ui->ui_mutex);
@@ -1545,7 +1548,7 @@ static int ubifs_vm_page_mkwrite(struct vm_area_struct *vma,
 		struct ubifs_inode *ui = ubifs_inode(inode);
 
 		mutex_lock(&ui->ui_mutex);
-		inode->i_mtime = inode->i_ctime = ubifs_current_time(inode);
+		inode->i_mtime = inode->i_ctime = timespec_to_vfs_time(ubifs_current_time(inode));
 		release = ui->dirty;
 		mark_inode_dirty_sync(inode);
 		mutex_unlock(&ui->ui_mutex);
