@@ -1038,8 +1038,9 @@ got:
 	inode->i_ino = ino + group * EXT4_INODES_PER_GROUP(sb);
 	/* This is the optimal IO size (for stat), not the fs block size */
 	inode->i_blocks = 0;
-	inode->i_mtime = inode->i_atime = inode->i_ctime = ei->i_crtime =
-						       ext4_current_time(inode);
+	inode->i_mtime = inode->i_atime = inode->i_ctime =
+						       timespec_to_vfs_time(ext4_current_time(inode));
+	ei->i_crtime = vfs_time_to_timespec(inode->i_atime);
 
 	memset(ei->i_data, 0, sizeof(ei->i_data));
 	ei->i_dir_start_lookup = 0;

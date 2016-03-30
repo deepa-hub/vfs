@@ -1934,7 +1934,7 @@ static int add_dirent_to_buf(handle_t *handle, struct ext4_filename *fname,
 	 * happen is that the times are slightly out of date
 	 * and/or different from the directory change time.
 	 */
-	dir->i_mtime = dir->i_ctime = ext4_current_time(dir);
+	dir->i_mtime = dir->i_ctime = timespec_to_vfs_time(ext4_current_time(dir));
 	ext4_update_dx_flag(dir);
 	dir->i_version++;
 	ext4_mark_inode_dirty(handle, dir);
@@ -2983,7 +2983,7 @@ static int ext4_rmdir(struct inode *dir, struct dentry *dentry)
 	 * recovery. */
 	inode->i_size = 0;
 	ext4_orphan_add(handle, inode);
-	inode->i_ctime = dir->i_ctime = dir->i_mtime = ext4_current_time(inode);
+	inode->i_ctime = dir->i_ctime = dir->i_mtime = timespec_to_vfs_time(ext4_current_time(inode));
 	ext4_mark_inode_dirty(handle, inode);
 	ext4_dec_count(handle, dir);
 	ext4_update_dx_flag(dir);
@@ -3046,13 +3046,13 @@ static int ext4_unlink(struct inode *dir, struct dentry *dentry)
 	retval = ext4_delete_entry(handle, dir, de, bh);
 	if (retval)
 		goto end_unlink;
-	dir->i_ctime = dir->i_mtime = ext4_current_time(dir);
+	dir->i_ctime = dir->i_mtime = timespec_to_vfs_time(ext4_current_time(dir));
 	ext4_update_dx_flag(dir);
 	ext4_mark_inode_dirty(handle, dir);
 	drop_nlink(inode);
 	if (!inode->i_nlink)
 		ext4_orphan_add(handle, inode);
-	inode->i_ctime = ext4_current_time(inode);
+	inode->i_ctime = timespec_to_vfs_time(ext4_current_time(inode));
 	ext4_mark_inode_dirty(handle, inode);
 
 end_unlink:
@@ -3251,7 +3251,7 @@ retry:
 	if (IS_DIRSYNC(dir))
 		ext4_handle_sync(handle);
 
-	inode->i_ctime = ext4_current_time(inode);
+	inode->i_ctime = timespec_to_vfs_time(ext4_current_time(inode));
 	ext4_inc_count(handle, inode);
 	ihold(inode);
 
@@ -3378,7 +3378,7 @@ static int ext4_setent(handle_t *handle, struct ext4_renament *ent,
 		ent->de->file_type = file_type;
 	ent->dir->i_version++;
 	ent->dir->i_ctime = ent->dir->i_mtime =
-		ext4_current_time(ent->dir);
+		timespec_to_vfs_time(ext4_current_time(ent->dir));
 	ext4_mark_inode_dirty(handle, ent->dir);
 	BUFFER_TRACE(ent->bh, "call ext4_handle_dirty_metadata");
 	if (!ent->inlined) {
@@ -3649,7 +3649,7 @@ static int ext4_rename(struct inode *old_dir, struct dentry *old_dentry,
 	 * Like most other Unix systems, set the ctime for inodes on a
 	 * rename.
 	 */
-	old.inode->i_ctime = ext4_current_time(old.inode);
+	old.inode->i_ctime = timespec_to_vfs_time(ext4_current_time(old.inode));
 	ext4_mark_inode_dirty(handle, old.inode);
 
 	if (!whiteout) {
@@ -3661,9 +3661,9 @@ static int ext4_rename(struct inode *old_dir, struct dentry *old_dentry,
 
 	if (new.inode) {
 		ext4_dec_count(handle, new.inode);
-		new.inode->i_ctime = ext4_current_time(new.inode);
+		new.inode->i_ctime = timespec_to_vfs_time(ext4_current_time(new.inode));
 	}
-	old.dir->i_ctime = old.dir->i_mtime = ext4_current_time(old.dir);
+	old.dir->i_ctime = old.dir->i_mtime = timespec_to_vfs_time(ext4_current_time(old.dir));
 	ext4_update_dx_flag(old.dir);
 	if (old.dir_bh) {
 		retval = ext4_rename_dir_finish(handle, &old, new.dir->i_ino);
@@ -3823,8 +3823,8 @@ static int ext4_cross_rename(struct inode *old_dir, struct dentry *old_dentry,
 	 * Like most other Unix systems, set the ctime for inodes on a
 	 * rename.
 	 */
-	old.inode->i_ctime = ext4_current_time(old.inode);
-	new.inode->i_ctime = ext4_current_time(new.inode);
+	old.inode->i_ctime = timespec_to_vfs_time(ext4_current_time(old.inode));
+	new.inode->i_ctime = timespec_to_vfs_time(ext4_current_time(new.inode));
 	ext4_mark_inode_dirty(handle, old.inode);
 	ext4_mark_inode_dirty(handle, new.inode);
 
