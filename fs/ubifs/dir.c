@@ -106,7 +106,7 @@ struct inode *ubifs_new_inode(struct ubifs_info *c, const struct inode *dir,
 
 	inode_init_owner(inode, dir, mode);
 	inode->i_mtime = inode->i_atime = inode->i_ctime =
-			 ubifs_current_time(inode);
+			 timespec_to_vfs_time(ubifs_current_time(inode));
 	inode->i_mapping->nrpages = 0;
 
 	switch (mode & S_IFMT) {
@@ -529,7 +529,7 @@ static int ubifs_link(struct dentry *old_dentry, struct inode *dir,
 	lock_2_inodes(dir, inode);
 	inc_nlink(inode);
 	ihold(inode);
-	inode->i_ctime = ubifs_current_time(inode);
+	inode->i_ctime = timespec_to_vfs_time(ubifs_current_time(inode));
 	dir->i_size += sz_change;
 	dir_ui->ui_size = dir->i_size;
 	dir->i_mtime = dir->i_ctime = inode->i_ctime;
@@ -586,7 +586,7 @@ static int ubifs_unlink(struct inode *dir, struct dentry *dentry)
 	}
 
 	lock_2_inodes(dir, inode);
-	inode->i_ctime = ubifs_current_time(dir);
+	inode->i_ctime = timespec_to_vfs_time(ubifs_current_time(dir));
 	drop_nlink(inode);
 	dir->i_size -= sz_change;
 	dir_ui->ui_size = dir->i_size;
@@ -675,7 +675,7 @@ static int ubifs_rmdir(struct inode *dir, struct dentry *dentry)
 	}
 
 	lock_2_inodes(dir, inode);
-	inode->i_ctime = ubifs_current_time(dir);
+	inode->i_ctime = timespec_to_vfs_time(ubifs_current_time(dir));
 	clear_nlink(inode);
 	drop_nlink(dir);
 	dir->i_size -= sz_change;
@@ -1024,7 +1024,7 @@ static int ubifs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	 * rename.
 	 */
 	time = ubifs_current_time(old_dir);
-	old_inode->i_ctime = time;
+	old_inode->i_ctime = timespec_to_vfs_time(time);
 
 	/* We must adjust parent link count when renaming directories */
 	if (is_dir) {
@@ -1053,8 +1053,8 @@ static int ubifs_rename(struct inode *old_dir, struct dentry *old_dentry,
 
 	old_dir->i_size -= old_sz;
 	ubifs_inode(old_dir)->ui_size = old_dir->i_size;
-	old_dir->i_mtime = old_dir->i_ctime = time;
-	new_dir->i_mtime = new_dir->i_ctime = time;
+	old_dir->i_mtime = old_dir->i_ctime = timespec_to_vfs_time(time);
+	new_dir->i_mtime = new_dir->i_ctime = timespec_to_vfs_time(time);
 
 	/*
 	 * And finally, if we unlinked a direntry which happened to have the
@@ -1071,7 +1071,7 @@ static int ubifs_rename(struct inode *old_dir, struct dentry *old_dentry,
 			clear_nlink(new_inode);
 		else
 			drop_nlink(new_inode);
-		new_inode->i_ctime = time;
+		new_inode->i_ctime = timespec_to_vfs_time(time);
 	} else {
 		new_dir->i_size += new_sz;
 		ubifs_inode(new_dir)->ui_size = new_dir->i_size;
