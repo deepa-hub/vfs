@@ -844,9 +844,11 @@ static inline void ext4_decode_extra_time(struct timespec *time, __le32 extra)
 #define EXT4_INODE_SET_XTIME(xtime, inode, raw_inode)			       \
 do {									       \
 	(raw_inode)->xtime = cpu_to_le32((inode)->xtime.tv_sec);	       \
-	if (EXT4_FITS_IN_INODE(raw_inode, EXT4_I(inode), xtime ## _extra))     \
+	if (EXT4_FITS_IN_INODE(raw_inode, EXT4_I(inode), xtime ## _extra))  {   \
+		struct timespec __ts = vfs_time_to_timespec((inode)->xtime);	\
 		(raw_inode)->xtime ## _extra =				       \
-				ext4_encode_extra_time(&(inode)->xtime);       \
+				ext4_encode_extra_time(&__ts);       \
+	}	\
 } while (0)
 
 #define EXT4_EINODE_SET_XTIME(xtime, einode, raw_inode)			       \
@@ -861,9 +863,12 @@ do {									       \
 #define EXT4_INODE_GET_XTIME(xtime, inode, raw_inode)			       \
 do {									       \
 	(inode)->xtime.tv_sec = (signed)le32_to_cpu((raw_inode)->xtime);       \
-	if (EXT4_FITS_IN_INODE(raw_inode, EXT4_I(inode), xtime ## _extra))     \
-		ext4_decode_extra_time(&(inode)->xtime,			       \
+	if (EXT4_FITS_IN_INODE(raw_inode, EXT4_I(inode), xtime ## _extra)) {    \
+		struct timespec __ts = vfs_time_to_timespec((inode)->xtime);	\
+		ext4_decode_extra_time(&__ts,			       \
 				       raw_inode->xtime ## _extra);	       \
+		(inode)->xtime = timespec_to_vfs_time(__ts);	\
+	}	\
 	else								       \
 		(inode)->xtime.tv_nsec = 0;				       \
 } while (0)
@@ -1518,8 +1523,8 @@ static inline struct ext4_inode_info *EXT4_I(struct inode *inode)
 
 static inline struct timespec ext4_current_time(struct inode *inode)
 {
-	return (inode->i_sb->s_time_gran < NSEC_PER_SEC) ?
-		current_fs_time(inode->i_sb) : current_fs_time_sec(inode->i_sb);
+	return vfs_time_to_timespec((inode->i_sb->s_time_gran < NSEC_PER_SEC) ?
+		current_fs_time(inode->i_sb) : current_fs_time_sec(inode->i_sb));
 }
 
 static inline int ext4_valid_inum(struct super_block *sb, unsigned long ino)
