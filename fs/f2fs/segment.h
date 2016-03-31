@@ -651,7 +651,7 @@ static inline void set_to_next_sit(struct sit_info *sit_i, unsigned int start)
 static inline unsigned long long get_mtime(struct f2fs_sb_info *sbi)
 {
 	struct sit_info *sit_i = SIT_I(sbi);
-	struct timespec ts = current_fs_time_sec(sbi->sb);
+	struct timespec ts = vfs_time_to_timespec(current_fs_time_sec(sbi->sb));
 
 	return sit_i->elapsed_time + ts.tv_sec -
 						sit_i->mounted_time;
