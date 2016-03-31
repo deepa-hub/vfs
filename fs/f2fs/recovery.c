@@ -172,23 +172,27 @@ static bool is_same_inode(struct inode *inode, struct page *ipage)
 {
 	struct f2fs_inode *ri = F2FS_INODE(ipage);
 	struct timespec disk;
+	struct timespec inode_ts;
 
 	if (!IS_INODE(ipage))
 		return true;
 
 	disk.tv_sec = le64_to_cpu(ri->i_ctime);
 	disk.tv_nsec = le32_to_cpu(ri->i_ctime_nsec);
-	if (timespec_compare(&inode->i_ctime, &disk) > 0)
+	inode_ts = vfs_time_to_timespec(inode->i_ctime);
+	if (timespec_compare(&inode_ts, &disk) > 0)
 		return false;
 
 	disk.tv_sec = le64_to_cpu(ri->i_atime);
 	disk.tv_nsec = le32_to_cpu(ri->i_atime_nsec);
-	if (timespec_compare(&inode->i_atime, &disk) > 0)
+	inode_ts = vfs_time_to_timespec(inode->i_atime);
+	if (timespec_compare(&inode_ts, &disk) > 0)
 		return false;
 
 	disk.tv_sec = le64_to_cpu(ri->i_mtime);
 	disk.tv_nsec = le32_to_cpu(ri->i_mtime_nsec);
-	if (timespec_compare(&inode->i_mtime, &disk) > 0)
+	inode_ts = vfs_time_to_timespec(inode->i_mtime);
+	if (timespec_compare(&inode_ts, &disk) > 0)
 		return false;
 
 	return true;
