@@ -221,6 +221,9 @@ int ocfs2_should_update_atime(struct inode *inode,
 			      struct vfsmount *vfsmnt)
 {
 	struct timespec now;
+	struct timespec atime;
+	struct timespec mtime;
+	struct timespec ctime;
 	struct ocfs2_super *osb = OCFS2_SB(inode->i_sb);
 
 	if (ocfs2_is_hard_readonly(osb) || ocfs2_is_soft_readonly(osb))
@@ -246,14 +249,17 @@ int ocfs2_should_update_atime(struct inode *inode,
 		return 0;
 
 	if (vfsmnt->mnt_flags & MNT_RELATIME) {
-		if ((timespec_compare(&inode->i_atime, &inode->i_mtime) <= 0) ||
-		    (timespec_compare(&inode->i_atime, &inode->i_ctime) <= 0))
+		atime = vfs_time_to_timespec(inode->i_atime);
+		mtime = vfs_time_to_timespec(inode->i_mtime);
+		ctime = vfs_time_to_timespec(inode->i_ctime);
+		if ((timespec_compare(&atime, &mtime) <= 0) ||
+		    (timespec_compare(&atime, &ctime) <= 0))
 			return 1;
 
 		return 0;
 	}
 
-	now = current_fs_time(inode->i_sb);
+	now = vfs_time_to_timespec(current_fs_time(inode->i_sb));
 	if ((now.tv_sec - inode->i_atime.tv_sec <= osb->s_atime_quantum))
 		return 0;
 	else
