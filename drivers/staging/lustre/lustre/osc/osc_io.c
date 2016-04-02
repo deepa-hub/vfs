@@ -41,6 +41,7 @@
 
 #define DEBUG_SUBSYSTEM S_OSC
 
+#include "../llite/vvp_internal.h"
 #include "osc_cl_internal.h"
 
 /** \addtogroup osc
@@ -219,7 +220,7 @@ static void osc_page_touch_at(const struct lu_env *env,
 	       kms > loi->loi_kms ? "" : "not ", loi->loi_kms, kms,
 	       loi->loi_lvb.lvb_size);
 
-	attr->cat_mtime = attr->cat_ctime = LTIME_S(CURRENT_TIME);
+	attr->cat_mtime = attr->cat_ctime = LTIME_S(current_fs_time(vvp_object_inode(obj)->i_sb));
 	valid = CAT_MTIME | CAT_CTIME;
 	if (kms > loi->loi_kms) {
 		attr->cat_kms = kms;
