@@ -9396,7 +9396,6 @@ static int btrfs_rename_exchange(struct inode *old_dir,
 	struct btrfs_root *dest = BTRFS_I(new_dir)->root;
 	struct inode *new_inode = new_dentry->d_inode;
 	struct inode *old_inode = old_dentry->d_inode;
-	struct timespec ctime = CURRENT_TIME;
 	struct dentry *parent;
 	u64 old_ino = btrfs_ino(old_inode);
 	u64 new_ino = btrfs_ino(new_inode);
@@ -9478,10 +9477,10 @@ static int btrfs_rename_exchange(struct inode *old_dir,
 	inode_inc_iversion(new_dir);
 	inode_inc_iversion(old_inode);
 	inode_inc_iversion(new_inode);
-	old_dir->i_ctime = old_dir->i_mtime = ctime;
-	new_dir->i_ctime = new_dir->i_mtime = ctime;
-	old_inode->i_ctime = ctime;
-	new_inode->i_ctime = ctime;
+	old_inode->i_ctime = old_dir->i_ctime =
+	old_dir->i_mtime = current_fs_time(old_dir->i_sb);
+	new_dir->i_ctime = new_dir->i_mtime =
+	new_inode->i_ctime = current_fs_time(new_dir->i_sb);
 
 	if (old_dentry->d_parent != new_dentry->d_parent) {
 		btrfs_record_unlink_dir(trans, old_dir, old_inode, 1);
