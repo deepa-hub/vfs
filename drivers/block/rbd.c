@@ -1911,9 +1911,11 @@ static void rbd_osd_req_format_write(struct rbd_obj_request *obj_request)
 	struct rbd_img_request *img_request = obj_request->img_request;
 	struct ceph_osd_request *osd_req = obj_request->osd_req;
 	struct ceph_snap_context *snapc;
-	struct timespec mtime = CURRENT_TIME;
+	struct timespec mtime;
 
 	rbd_assert(osd_req != NULL);
+
+	mtime = current_fs_time(osd_req->r_inode->i_sb);
 
 	snapc = img_request ? img_request->snapc : NULL;
 	ceph_osdc_build_request(osd_req, obj_request->offset,
