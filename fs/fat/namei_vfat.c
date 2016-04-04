@@ -678,7 +678,7 @@ static int vfat_add_entry(struct inode *dir, struct qstr *qname, int is_dir,
 		goto cleanup;
 
 	/* update timestamp */
-	dir->i_ctime = dir->i_mtime = dir->i_atime = *ts;
+	dir->i_ctime = dir->i_mtime = dir->i_atime = timespec_to_vfs_time(*ts);
 	if (IS_DIRSYNC(dir))
 		(void)fat_sync_inode(dir);
 	else
@@ -777,7 +777,7 @@ static int vfat_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 
 	mutex_lock(&MSDOS_SB(sb)->s_lock);
 
-	ts = current_fs_time_sec(sb);
+	ts = vfs_time_to_timespec(current_fs_time_sec(sb));
 	err = vfat_add_entry(dir, &dentry->d_name, 0, 0, &ts, &sinfo);
 	if (err)
 		goto out;
@@ -790,7 +790,7 @@ static int vfat_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 		goto out;
 	}
 	inode->i_version++;
-	inode->i_mtime = inode->i_atime = inode->i_ctime = ts;
+	inode->i_mtime = inode->i_atime = inode->i_ctime = timespec_to_vfs_time(ts);
 	/* timestamp is already written, so mark_inode_dirty() is unneeded. */
 
 	d_instantiate(dentry, inode);
@@ -866,7 +866,7 @@ static int vfat_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 
 	mutex_lock(&MSDOS_SB(sb)->s_lock);
 
-	ts = current_fs_time_sec(sb);
+	ts = vfs_time_to_timespec(current_fs_time_sec(sb));
 	cluster = fat_alloc_new_dir(dir, &ts);
 	if (cluster < 0) {
 		err = cluster;
@@ -887,7 +887,7 @@ static int vfat_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 	}
 	inode->i_version++;
 	set_nlink(inode, 2);
-	inode->i_mtime = inode->i_atime = inode->i_ctime = ts;
+	inode->i_mtime = inode->i_atime = inode->i_ctime = timespec_to_vfs_time(ts);
 	/* timestamp is already written, so mark_inode_dirty() is unneeded. */
 
 	d_instantiate(dentry, inode);
@@ -931,7 +931,7 @@ static int vfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 		}
 	}
 
-	ts = current_fs_time_sec(sb);
+	ts = vfs_time_to_timespec(current_fs_time_sec(sb));
 	if (new_inode) {
 		if (is_dir) {
 			err = fat_dir_empty(new_inode);
@@ -976,7 +976,7 @@ static int vfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 	if (err)
 		goto error_dotdot;
 	old_dir->i_version++;
-	old_dir->i_ctime = old_dir->i_mtime = ts;
+	old_dir->i_ctime = old_dir->i_mtime = timespec_to_vfs_time(ts);
 	if (IS_DIRSYNC(old_dir))
 		(void)fat_sync_inode(old_dir);
 	else
@@ -986,7 +986,7 @@ static int vfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 		drop_nlink(new_inode);
 		if (is_dir)
 			drop_nlink(new_inode);
-		new_inode->i_ctime = ts;
+		new_inode->i_ctime = timespec_to_vfs_time(ts);
 	}
 out:
 	brelse(sinfo.bh);

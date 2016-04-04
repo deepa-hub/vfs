@@ -249,7 +249,7 @@ static int msdos_add_entry(struct inode *dir, const unsigned char *name,
 	if (err)
 		return err;
 
-	dir->i_ctime = dir->i_mtime = *ts;
+	dir->i_ctime = dir->i_mtime = timespec_to_vfs_time(*ts);
 	if (IS_DIRSYNC(dir))
 		(void)fat_sync_inode(dir);
 	else
@@ -283,7 +283,7 @@ static int msdos_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 		goto out;
 	}
 
-	ts = current_fs_time_sec(sb);
+	ts = vfs_time_to_timespec(current_fs_time_sec(sb));
 	err = msdos_add_entry(dir, msdos_name, 0, is_hid, 0, &ts, &sinfo);
 	if (err)
 		goto out;
@@ -293,7 +293,7 @@ static int msdos_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 		err = PTR_ERR(inode);
 		goto out;
 	}
-	inode->i_mtime = inode->i_atime = inode->i_ctime = ts;
+	inode->i_mtime = inode->i_atime = inode->i_ctime = timespec_to_vfs_time(ts);
 	/* timestamp is already written, so mark_inode_dirty() is unneeded. */
 
 	d_instantiate(dentry, inode);
@@ -364,7 +364,7 @@ static int msdos_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 		goto out;
 	}
 
-	ts = current_fs_time_sec(sb);
+	ts = vfs_time_to_timespec(current_fs_time_sec(sb));
 	cluster = fat_alloc_new_dir(dir, &ts);
 	if (cluster < 0) {
 		err = cluster;
@@ -383,7 +383,7 @@ static int msdos_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 		goto out;
 	}
 	set_nlink(inode, 2);
-	inode->i_mtime = inode->i_atime = inode->i_ctime = ts;
+	inode->i_mtime = inode->i_atime = inode->i_ctime = timespec_to_vfs_time(ts);
 	/* timestamp is already written, so mark_inode_dirty() is unneeded. */
 
 	d_instantiate(dentry, inode);
@@ -491,7 +491,7 @@ static int do_msdos_rename(struct inode *old_dir, unsigned char *old_name,
 		}
 	}
 
-	ts = current_fs_time_sec(new_inode->i_sb);
+	ts = vfs_time_to_timespec(current_fs_time_sec(new_inode->i_sb));
 	if (new_inode) {
 		if (err)
 			goto out;
@@ -542,7 +542,7 @@ static int do_msdos_rename(struct inode *old_dir, unsigned char *old_name,
 	if (err)
 		goto error_dotdot;
 	old_dir->i_version++;
-	old_dir->i_ctime = old_dir->i_mtime = ts;
+	old_dir->i_ctime = old_dir->i_mtime = timespec_to_vfs_time(ts);
 	if (IS_DIRSYNC(old_dir))
 		(void)fat_sync_inode(old_dir);
 	else
@@ -552,7 +552,7 @@ static int do_msdos_rename(struct inode *old_dir, unsigned char *old_name,
 		drop_nlink(new_inode);
 		if (is_dir)
 			drop_nlink(new_inode);
-		new_inode->i_ctime = ts;
+		new_inode->i_ctime = timespec_to_vfs_time(ts);
 	}
 out:
 	brelse(sinfo.bh);
