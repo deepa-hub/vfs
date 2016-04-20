@@ -1566,18 +1566,18 @@ static int relatime_need_update(struct vfsmount *mnt, struct inode *inode,
 	return 0;
 }
 
-int generic_update_time(struct inode *inode, struct timespec *time, int flags)
+int generic_update_time(struct inode *inode, struct timespec64 *time, int flags)
 {
 	int iflags = I_DIRTY_TIME;
 
 	if (flags & S_ATIME)
-		inode->i_atime = timespec_to_timespec64(*time);
+		inode->i_atime = *time;
 	if (flags & S_VERSION)
 		inode_inc_iversion(inode);
 	if (flags & S_CTIME)
-		inode->i_ctime = timespec_to_timespec64(*time);
+		inode->i_ctime = *time;
 	if (flags & S_MTIME)
-		inode->i_mtime = timespec_to_timespec64(*time);
+		inode->i_mtime = *time;
 
 	if (!(inode->i_sb->s_flags & MS_LAZYTIME) || (flags & S_VERSION))
 		iflags |= I_DIRTY_SYNC;
@@ -1592,13 +1592,12 @@ EXPORT_SYMBOL(generic_update_time);
  */
 static int update_time(struct inode *inode, struct timespec64 *time, int flags)
 {
-	int (*update_time)(struct inode *, struct timespec *, int);
-	struct timespec ts = timespec64_to_timespec(*time);
+	int (*update_time)(struct inode *, struct timespec64 *, int);
 
 	update_time = inode->i_op->update_time ? inode->i_op->update_time :
 		generic_update_time;
 
-	return update_time(inode, &ts, flags);
+	return update_time(inode, time, flags);
 }
 
 /**
