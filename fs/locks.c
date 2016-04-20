@@ -1522,7 +1522,7 @@ EXPORT_SYMBOL(__break_lease);
  * exclusive leases.  The justification is that if someone has an
  * exclusive lease, then they could be modifying it.
  */
-void lease_get_mtime(struct inode *inode, struct timespec *time)
+void lease_get_mtime(struct inode *inode, struct timespec64 *time)
 {
 	bool has_lease = false;
 	struct file_lock_context *ctx;
@@ -1539,9 +1539,9 @@ void lease_get_mtime(struct inode *inode, struct timespec *time)
 	}
 
 	if (has_lease)
-		*time = timespec64_to_timespec(current_fs_time(inode->i_sb));
+		*time = current_fs_time(inode->i_sb);
 	else
-		*time = timespec64_to_timespec(inode->i_mtime);
+		*time = inode->i_mtime;
 }
 
 EXPORT_SYMBOL(lease_get_mtime);
