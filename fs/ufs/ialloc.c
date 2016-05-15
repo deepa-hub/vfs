@@ -324,7 +324,7 @@ cg_found:
 		lock_buffer(bh);
 		ufs2_inode = (struct ufs2_inode *)bh->b_data;
 		ufs2_inode += ufs_inotofsbo(inode->i_ino);
-		ts = current_fs_time(sb);
+		ts = vfs_time_to_timespec(current_fs_time(sb));
 		ufs2_inode->ui_birthtime = cpu_to_fs64(sb, ts.tv_sec);
 		ufs2_inode->ui_birthnsec = cpu_to_fs32(sb, ts.tv_nsec);
 		mark_buffer_dirty(bh);
