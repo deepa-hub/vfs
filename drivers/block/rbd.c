@@ -1915,7 +1915,7 @@ static void rbd_osd_req_format_write(struct rbd_obj_request *obj_request)
 
 	rbd_assert(osd_req != NULL);
 
-	mtime = current_fs_time(osd_req->r_inode->i_sb);
+	mtime = vfs_time_to_timespec(current_fs_time(osd_req->r_inode->i_sb));
 
 	snapc = img_request ? img_request->snapc : NULL;
 	ceph_osdc_build_request(osd_req, obj_request->offset,
