@@ -1566,13 +1566,13 @@ static int reiserfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 
 	mark_de_hidden(old_de.de_deh + old_de.de_entry_num);
 	journal_mark_dirty(&th, old_de.de_bh);
-	old_dir->i_ctime = old_dir->i_mtime = current_fs_time_sec(old_dir->i_sb);
-	new_dir->i_ctime = new_dir->i_mtime = current_fs_time_sec(new_dir->i_sb);
+	old_dir->i_ctime = old_dir->i_mtime =  current_fs_time_sec(old_dir->i_sb);
+	new_dir->i_ctime = new_dir->i_mtime =  current_fs_time_sec(new_dir->i_sb);
 	/*
 	 * thanks to Alex Adriaanse <alex_a@caltech.edu> for patch
 	 * which adds ctime update of renamed object
 	 */
-	old_inode->i_ctime = current_fs_time_sec(old_inode->i_sb);
+	old_inode->i_ctime =  current_fs_time_sec(old_inode->i_sb);
 
 	if (new_dentry_inode) {
 		/* adjust link number of the victim */
@@ -1581,7 +1581,7 @@ static int reiserfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 		} else {
 			drop_nlink(new_dentry_inode);
 		}
-		new_dentry_inode->i_ctime = ctime;
+		new_dentry_inode->i_ctime = current_fs_time_sec(new_dentry_inode->i_sb);
 		savelink = new_dentry_inode->i_nlink;
 	}
 

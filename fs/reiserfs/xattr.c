@@ -450,10 +450,11 @@ int reiserfs_commit_write(struct file *f, struct page *page,
 
 static void update_ctime(struct inode *inode)
 {
-	struct timespec now = current_fs_time(inode->i_sb);
+	struct timespec now = vfs_time_to_timespec(current_fs_time(inode->i_sb));
+	struct timespec ctime = vfs_time_to_timespec(inode->i_ctime);
 
 	if (inode_unhashed(inode) || !inode->i_nlink ||
-	    timespec_equal(&inode->i_ctime, &now))
+	    timespec_equal(&ctime, &now))
 		return;
 
 	inode->i_ctime = current_fs_time_sec(inode->i_sb);
