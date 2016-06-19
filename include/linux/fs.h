@@ -1450,7 +1450,6 @@ struct super_block {
 	struct list_head	s_inodes;	/* all inodes */
 };
 
-extern struct timespec current_fs_time(struct super_block *sb);
 extern struct timespec current_time(struct inode *inode);
 
 /*
