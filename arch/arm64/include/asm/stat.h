@@ -20,6 +20,7 @@
 
 #ifdef CONFIG_COMPAT
 
+#include <asm/compat_time.h>
 #include <asm/compat.h>
 
 /*
