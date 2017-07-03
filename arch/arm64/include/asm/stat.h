@@ -20,7 +20,7 @@
 
 #ifdef CONFIG_COMPAT
 
-#include <asm/compat.h>
+#include <linux/compat.h>
 
 /*
  * struct stat64 is needed for compat tasks only. Its definition is different
