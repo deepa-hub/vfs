@@ -80,12 +80,23 @@ typedef struct {
 } __kernel_fsid_t;
 #endif
 
+#ifdef CONFIG_64BIT_TIME
+struct __kernel_timespec {
+       __kernel_time64_t       tv_sec;                 /* seconds */
+       long long               tv_nsec;                /* nanoseconds */
+};
+#else
+#define __kernel_timespec timespec
+#endif
+
 /*
  * anything below here should be completely generic
  */
 typedef __kernel_long_t	__kernel_off_t;
 typedef long long	__kernel_loff_t;
 typedef __kernel_long_t	__kernel_time_t;
+typedef long long __kernel_time64_t;
+typedef long long __kernel_suseconds64_t;
 typedef __kernel_long_t	__kernel_clock_t;
 typedef int		__kernel_timer_t;
 typedef int		__kernel_clockid_t;
