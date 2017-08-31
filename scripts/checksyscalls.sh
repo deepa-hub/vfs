@@ -100,6 +100,7 @@ cat << EOF
 #define __IGNORE_clock_gettime64
 #define __IGNORE_clock_settime64
 #define __IGNORE_clock_getres64
+#define __IGNORE_clock_nanosleep64
 #endif
 
 /* i386-specific or historical system calls */
