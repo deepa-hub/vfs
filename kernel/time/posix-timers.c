@@ -1055,6 +1055,7 @@ SYSCALL_DEFINE2(clock_gettime, const clockid_t, which_clock,
 	struct timespec64 kernel_tp;
 	int error;
 
+	trace_printk("In native/new syscall entry path\n");
 	if (!kc)
 		return -EINVAL;
 
@@ -1131,6 +1132,7 @@ COMPAT_SYSCALL_DEFINE2(clock_gettime, clockid_t, which_clock,
 
 	if (!kc)
 		return -EINVAL;
+	trace_printk("In compat syscall entry path\n");
 
 	err = kc->clock_get(which_clock, &ts);
 
