@@ -25,6 +25,7 @@
 #define gtod (&VVAR(vsyscall_gtod_data))
 
 extern int __vdso_clock_gettime(clockid_t clock, struct timespec *ts);
+extern int __vdso_clock_gettime64(clockid_t clock, struct __kernel_timespec *ts);
 extern int __vdso_gettimeofday(struct timeval *tv, struct timezone *tz);
 extern time_t __vdso_time(time_t *t);
 
@@ -40,7 +41,7 @@ extern u8 hvclock_page
 
 #ifndef BUILD_VDSO32
 
-notrace static long vdso_fallback_gettime(long clock, struct timespec *ts)
+notrace static long vdso_fallback_gettime(long clock, struct __kernel_timespec *ts)
 {
 	long ret;
 	asm("syscall" : "=a" (ret) :
@@ -60,7 +61,29 @@ notrace static long vdso_fallback_gtod(struct timeval *tv, struct timezone *tz)
 
 #else
 
-notrace static long vdso_fallback_gettime(long clock, struct timespec *ts)
+#ifdef CONFIG_64BIT_TIME
+
+notrace static long vdso_fallback_gettime(long clock, struct __kernel_timespec *ts)
+{
+	long ret;
+
+	asm(
+		"mov %%ebx, %%edx \n"
+		"mov %2, %%ebx \n"
+		"call __kernel_vsyscall \n"
+		"mov %%edx, %%ebx \n"
+		: "=a" (ret)
+		: "0" (__NR_clock_gettime64), "g" (clock), "c" (ts)
+		: "memory", "edx");
+	return ret;
+}
+
+#else
+
+/* The below function can be removed after CONFIG_64BIT_TIME is enable as a
+* standard default for x86.
+*/
+notrace static long vdso_fallback_gettime(long clock, struct __kernel_timespec *ts)
 {
 	long ret;
 
@@ -74,6 +97,8 @@ notrace static long vdso_fallback_gettime(long clock, struct timespec *ts)
 		: "memory", "edx");
 	return ret;
 }
+
+#endif
 
 notrace static long vdso_fallback_gtod(struct timeval *tv, struct timezone *tz)
 {
@@ -204,7 +229,7 @@ notrace static inline u64 vgetsns(int *mode)
 }
 
 /* Code size doesn't matter (vdso is 4k anyway) and this is faster. */
-notrace static int __always_inline do_realtime(struct timespec *ts)
+notrace static int __always_inline do_realtime(struct __kernel_timespec *ts)
 {
 	unsigned long seq;
 	u64 ns;
@@ -225,7 +250,7 @@ notrace static int __always_inline do_realtime(struct timespec *ts)
 	return mode;
 }
 
-notrace static int __always_inline do_monotonic(struct timespec *ts)
+notrace static int __always_inline do_monotonic(struct __kernel_timespec *ts)
 {
 	unsigned long seq;
 	u64 ns;
@@ -246,7 +271,7 @@ notrace static int __always_inline do_monotonic(struct timespec *ts)
 	return mode;
 }
 
-notrace static void do_realtime_coarse(struct timespec *ts)
+notrace static void do_realtime_coarse(struct __kernel_timespec *ts)
 {
 	unsigned long seq;
 	do {
@@ -256,7 +281,7 @@ notrace static void do_realtime_coarse(struct timespec *ts)
 	} while (unlikely(gtod_read_retry(gtod, seq)));
 }
 
-notrace static void do_monotonic_coarse(struct timespec *ts)
+notrace static void do_monotonic_coarse(struct __kernel_timespec *ts)
 {
 	unsigned long seq;
 	do {
@@ -266,40 +291,59 @@ notrace static void do_monotonic_coarse(struct timespec *ts)
 	} while (unlikely(gtod_read_retry(gtod, seq)));
 }
 
-notrace int __vdso_clock_gettime(clockid_t clock, struct timespec *ts)
+notrace int __vdso_clock_gettime64(clockid_t clock, struct __kernel_timespec *kts)
 {
 	switch (clock) {
 	case CLOCK_REALTIME:
-		if (do_realtime(ts) == VCLOCK_NONE)
+		if (do_realtime(kts) == VCLOCK_NONE)
 			goto fallback;
 		break;
 	case CLOCK_MONOTONIC:
-		if (do_monotonic(ts) == VCLOCK_NONE)
+		if (do_monotonic(kts) == VCLOCK_NONE)
 			goto fallback;
 		break;
 	case CLOCK_REALTIME_COARSE:
-		do_realtime_coarse(ts);
+		do_realtime_coarse(kts);
 		break;
 	case CLOCK_MONOTONIC_COARSE:
-		do_monotonic_coarse(ts);
+		do_monotonic_coarse(kts);
 		break;
 	default:
 		goto fallback;
 	}
-
 	return 0;
 fallback:
-	return vdso_fallback_gettime(clock, ts);
+	return vdso_fallback_gettime(clock, kts);
+
+}
+int clock_gettime64(clockid_t, struct __kernel_timespec *)
+	__attribute__((weak, alias("__vdso_clock_gettime64")));
+
+notrace int __vdso_clock_gettime(clockid_t clock, struct timespec *ts)
+{
+	struct __kernel_timespec kts;
+	long ret;
+
+	ret = __vdso_clock_gettime64(clock, &kts);
+
+	ts->tv_nsec = kts.tv_nsec;
+	ts->tv_sec = kts.tv_sec;
+
+	return ret;
 }
 int clock_gettime(clockid_t, struct timespec *)
 	__attribute__((weak, alias("__vdso_clock_gettime")));
 
 notrace int __vdso_gettimeofday(struct timeval *tv, struct timezone *tz)
 {
+	struct __kernel_timespec kts;
+
 	if (likely(tv != NULL)) {
-		if (unlikely(do_realtime((struct timespec *)tv) == VCLOCK_NONE))
+		if (unlikely(do_realtime(&kts) == VCLOCK_NONE))
 			return vdso_fallback_gtod(tv, tz);
-		tv->tv_usec /= 1000;
+		
+		tv->tv_usec = (long)kts.tv_nsec / 1000;
+		tv->tv_sec = kts.tv_sec;
 	}
 	if (unlikely(tz != NULL)) {
 		tz->tz_minuteswest = gtod->tz_minuteswest;
