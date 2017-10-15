@@ -7,8 +7,6 @@
 
 #include <linux/types.h>
 
-#ifdef CONFIG_COMPAT
-
 #include <linux/stat.h>
 #include <linux/param.h>	/* for HZ */
 #include <linux/sem.h>
@@ -19,9 +17,13 @@
 #include <linux/unistd.h>
 #include <linux/compat_time.h>
 
+#ifdef CONFIG_COMPAT
+
 #include <asm/compat.h>
 #include <asm/siginfo.h>
 #include <asm/signal.h>
+
+#endif
 
 #ifndef COMPAT_USE_64BIT_TIME
 #define COMPAT_USE_64BIT_TIME 0
@@ -57,6 +59,8 @@
 		return C_SYSC##name(__MAP(x,__SC_DELOUSE,__VA_ARGS__));	\
 	}								\
 	static inline long C_SYSC##name(__MAP(x,__SC_DECL,__VA_ARGS__))
+
+#ifdef CONFIG_COMPAT
 
 #ifndef compat_user_stack_pointer
 #define compat_user_stack_pointer() current_user_stack_pointer()
