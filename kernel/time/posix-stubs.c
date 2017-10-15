@@ -150,6 +150,7 @@ COMPAT_SYS_NI(timer_settime);
 COMPAT_SYS_NI(timer_gettime);
 COMPAT_SYS_NI(getitimer);
 COMPAT_SYS_NI(setitimer);
+#endif
 
 COMPAT_SYSCALL_DEFINE2(clock_settime, const clockid_t, which_clock,
 		       struct compat_timespec __user *, tp)
@@ -228,4 +229,3 @@ COMPAT_SYSCALL_DEFINE4(clock_nanosleep, clockid_t, which_clock, int, flags,
 				 HRTIMER_MODE_ABS : HRTIMER_MODE_REL,
 				 which_clock);
 }
-#endif
