@@ -81,6 +81,15 @@ typedef struct {
 } __kernel_fsid_t;
 #endif
 
+#ifdef CONFIG_64BIT_TIME
+struct __kernel_itimerspec {
+       __kernel_timespec     it_interval;
+       __kernel_timespec     it_value;
+};
+#else
+#define __kernel_itimerspec itimerspec
+#endif
+
 /*
  * anything below here should be completely generic
  */
