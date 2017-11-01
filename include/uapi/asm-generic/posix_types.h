@@ -85,8 +85,13 @@ struct __kernel_timespec {
        __kernel_time64_t       tv_sec;                 /* seconds */
        long long               tv_nsec;                /* nanoseconds */
 };
+struct __kernel_itimerspec {
+       __kernel_timespec     it_interval;
+       __kernel_timespec     it_value;
+};
 #else
 #define __kernel_timespec timespec
+#define __kernel_itimerspec itimerspec
 #endif
 
 /*
