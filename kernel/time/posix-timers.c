@@ -749,7 +749,6 @@ SYSCALL_DEFINE2(timer_gettime, timer_t, timer_id,
 	return ret;
 }
 
-#ifdef CONFIG_COMPAT
 COMPAT_SYSCALL_DEFINE2(timer_gettime, timer_t, timer_id,
 		       struct compat_itimerspec __user *, setting)
 {
@@ -762,7 +761,6 @@ COMPAT_SYSCALL_DEFINE2(timer_gettime, timer_t, timer_id,
 	}
 	return ret;
 }
-#endif
 
 /*
  * Get the number of overruns of a POSIX.1b interval timer.  This is to
@@ -921,7 +919,6 @@ SYSCALL_DEFINE4(timer_settime, timer_t, timer_id, int, flags,
 	return error;
 }
 
-#ifdef CONFIG_COMPAT
 COMPAT_SYSCALL_DEFINE4(timer_settime, timer_t, timer_id, int, flags,
 		       struct compat_itimerspec __user *, new,
 		       struct compat_itimerspec __user *, old)
@@ -942,7 +939,6 @@ COMPAT_SYSCALL_DEFINE4(timer_settime, timer_t, timer_id, int, flags,
 	}
 	return error;
 }
-#endif
 
 int common_timer_del(struct k_itimer *timer)
 {
