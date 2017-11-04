@@ -867,7 +867,7 @@ config COMPAT_OLD_SIGACTION
 	bool
 
 config ARCH_HAS_COMPAT_TIME
-	def_bool COMPAT
+	def_bool 64BIT && !COMPAT
 
 config CONFIG_64BIT_TIME
 	def_bool ARCH_HAS_COMPAT_TIME
