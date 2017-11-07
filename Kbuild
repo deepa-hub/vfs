@@ -54,6 +54,7 @@ targets += arch/$(SRCARCH)/kernel/asm-offsets.s
 arch/$(SRCARCH)/kernel/asm-offsets.s: arch/$(SRCARCH)/kernel/asm-offsets.c \
                                       $(obj)/$(timeconst-file) $(obj)/$(bounds-file) FORCE
 	$(Q)mkdir -p $(dir $@)
+	$(CC) $(c_flags) -E -o $(@:.s=.i) $<
 	$(call if_changed_dep,cc_s_c)
 
 $(obj)/$(offsets-file): arch/$(SRCARCH)/kernel/asm-offsets.s FORCE
