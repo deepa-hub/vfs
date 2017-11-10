@@ -14,7 +14,7 @@
 #include <linux/signal.h>
 #include <linux/syscalls.h>
 
-#include <asm/compat.h>
+#include <linux/compat.h>
 #include <asm/compat-signal.h>
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
