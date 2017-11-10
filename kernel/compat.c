@@ -30,6 +30,38 @@
 
 #include <linux/uaccess.h>
 
+static int __compat_get_timespec(struct timespec *ts, const struct compat_timespec __user *cts)
+{
+	return (!access_ok(VERIFY_READ, cts, sizeof(*cts)) ||
+			__get_user(ts->tv_sec, &cts->tv_sec) ||
+			__get_user(ts->tv_nsec, &cts->tv_nsec)) ? -EFAULT : 0;
+}
+
+static int __compat_put_timespec(const struct timespec *ts, struct compat_timespec __user *cts)
+{
+	return (!access_ok(VERIFY_WRITE, cts, sizeof(*cts)) ||
+			__put_user(ts->tv_sec, &cts->tv_sec) ||
+			__put_user(ts->tv_nsec, &cts->tv_nsec)) ? -EFAULT : 0;
+}
+
+int compat_get_timespec(struct timespec *ts, const void __user *uts)
+{
+	if (COMPAT_USE_64BIT_TIME)
+		return copy_from_user(ts, uts, sizeof(*ts)) ? -EFAULT : 0;
+	else
+		return __compat_get_timespec(ts, uts);
+}
+EXPORT_SYMBOL_GPL(compat_get_timespec);
+
+int compat_put_timespec(const struct timespec *ts, void __user *uts)
+{
+	if (COMPAT_USE_64BIT_TIME)
+		return copy_to_user(uts, ts, sizeof(*ts)) ? -EFAULT : 0;
+	else
+		return __compat_put_timespec(ts, uts);
+}
+EXPORT_SYMBOL_GPL(compat_put_timespec);
+
 static int __compat_get_timespec64(struct timespec64 *ts64,
 				   const struct compat_timespec __user *cts)
 {
@@ -173,20 +205,6 @@ static int __compat_put_timeval(const struct timeval *tv, struct compat_timeval 
 			__put_user(tv->tv_usec, &ctv->tv_usec)) ? -EFAULT : 0;
 }
 
-static int __compat_get_timespec(struct timespec *ts, const struct compat_timespec __user *cts)
-{
-	return (!access_ok(VERIFY_READ, cts, sizeof(*cts)) ||
-			__get_user(ts->tv_sec, &cts->tv_sec) ||
-			__get_user(ts->tv_nsec, &cts->tv_nsec)) ? -EFAULT : 0;
-}
-
-static int __compat_put_timespec(const struct timespec *ts, struct compat_timespec __user *cts)
-{
-	return (!access_ok(VERIFY_WRITE, cts, sizeof(*cts)) ||
-			__put_user(ts->tv_sec, &cts->tv_sec) ||
-			__put_user(ts->tv_nsec, &cts->tv_nsec)) ? -EFAULT : 0;
-}
-
 int compat_get_timeval(struct timeval *tv, const void __user *utv)
 {
 	if (COMPAT_USE_64BIT_TIME)
@@ -204,24 +222,6 @@ int compat_put_timeval(const struct timeval *tv, void __user *utv)
 		return __compat_put_timeval(tv, utv);
 }
 EXPORT_SYMBOL_GPL(compat_put_timeval);
-
-int compat_get_timespec(struct timespec *ts, const void __user *uts)
-{
-	if (COMPAT_USE_64BIT_TIME)
-		return copy_from_user(ts, uts, sizeof(*ts)) ? -EFAULT : 0;
-	else
-		return __compat_get_timespec(ts, uts);
-}
-EXPORT_SYMBOL_GPL(compat_get_timespec);
-
-int compat_put_timespec(const struct timespec *ts, void __user *uts)
-{
-	if (COMPAT_USE_64BIT_TIME)
-		return copy_to_user(uts, ts, sizeof(*ts)) ? -EFAULT : 0;
-	else
-		return __compat_put_timespec(ts, uts);
-}
-EXPORT_SYMBOL_GPL(compat_put_timespec);
 
 int get_compat_itimerval(struct itimerval *o, const struct compat_itimerval __user *i)
 {
