@@ -698,6 +698,38 @@ static void put_ts_pktinfo(struct msghdr *msg, struct sk_buff *skb)
 		 sizeof(ts_pktinfo), &ts_pktinfo);
 }
 
+static void sock_recv_sw_timestamp(struct msghdr *msg, struct sock *sk,
+				   struct sk_buff *skb)
+{
+	if (sock_flag(sk, SOCK_TSTAMP_NEW)) {
+		if (!sock_flag(sk, SOCK_RCVTSTAMPNS)) {
+			struct __kernel_sock_timeval tv;
+
+			skb_get_new_timestamp(skb, &tv);
+			put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMP_NEW,
+				 sizeof(tv), &tv);
+		} else {
+			struct __kernel_timespec ts;
+
+			skb_get_new_timestampns(skb, &ts);
+			put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMPNS_NEW,
+				 sizeof(ts), &ts);
+		}
+	}
+	if (!sock_flag(sk, SOCK_RCVTSTAMPNS)) {
+		struct __kernel_old_timeval tv;
+
+		skb_get_timestamp(skb, &tv);
+		put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMP_OLD,
+			 sizeof(tv), &tv);
+	} else {
+		struct timespec ts;
+
+		skb_get_timestampns(skb, &ts);
+		put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMPNS_OLD,
+			 sizeof(ts), &ts);
+	}
+}
 /*
  * called from sock_recv_timestamp() if sock_flag(sk, SOCK_RCVTSTAMP)
  */
@@ -717,19 +749,8 @@ void __sock_recv_timestamp(struct msghdr *msg, struct sock *sk,
 		false_tstamp = 1;
 	}
 
-	if (need_software_tstamp) {
-		if (!sock_flag(sk, SOCK_RCVTSTAMPNS)) {
-			struct __kernel_old_timeval tv;
-			skb_get_timestamp(skb, &tv);
-			put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMP_OLD,
-				 sizeof(tv), &tv);
-		} else {
-			struct timespec ts;
-			skb_get_timestampns(skb, &ts);
-			put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMPNS_OLD,
-				 sizeof(ts), &ts);
-		}
-	}
+	if (need_software_tstamp)
+		sock_recv_sw_timestamp(msg, sk, skb);
 
 	memset(&tss, 0, sizeof(tss));
 	if ((sk->sk_tsflags & SOF_TIMESTAMPING_SOFTWARE) &&

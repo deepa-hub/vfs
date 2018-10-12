@@ -1860,32 +1860,57 @@ static void tcp_update_recv_tstamps(struct sk_buff *skb,
 		tss->ts[2] = (struct timespec) {0};
 }
 
-/* Similar to __sock_recv_timestamp, but does not require an skb */
-static void tcp_recv_timestamp(struct msghdr *msg, const struct sock *sk,
-			       struct scm_timestamping *tss)
+static void tcp_recv_sw_timestamp(struct msghdr *msg, const struct sock *sk, struct timespec64 *ts)
 {
-	struct __kernel_old_timeval tv;
-	bool has_timestamping = false;
+	int new_tstamp = sock_flag(sk, SOCK_TSTAMP_NEW);
 
-	if (tss->ts[0].tv_sec || tss->ts[0].tv_nsec) {
-		if (sock_flag(sk, SOCK_RCVTSTAMP)) {
-			if (sock_flag(sk, SOCK_RCVTSTAMPNS)) {
-				put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMPNS_OLD,
-					 sizeof(tss->ts[0]), &tss->ts[0]);
+	if (ts->tv_sec || ts->tv_nsec) {
+		if (sock_flag(sk, SOCK_RCVTSTAMPNS)) {
+			if (new_tstamp) {
+				struct __kernel_timespec kts = {ts->tv_sec, ts->tv_nsec};
+
+				put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMPNS_NEW,
+					 sizeof(kts), &kts);
 			} else {
-				tv.tv_sec = tss->ts[0].tv_sec;
-				tv.tv_usec = tss->ts[0].tv_nsec / 1000;
+				struct timespec ts_old = timespec64_to_timespec(*ts);
 
+				put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMPNS_OLD,
+					 sizeof(ts), &ts_old);
+			}
+		} else if (sock_flag(sk, SOCK_RCVTSTAMP)) {
+			if (new_tstamp) {
+				struct __kernel_sock_timeval stv;
+
+				stv.tv_sec = ts->tv_sec;
+				stv.tv_usec = ts->tv_nsec / 1000;
+
+				put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMP_NEW,
+					 sizeof(stv), &stv);
+			} else {
+				struct __kernel_old_timeval tv;
+
+				tv.tv_sec = ts->tv_sec;
+				tv.tv_usec = ts->tv_nsec / 1000;
 				put_cmsg(msg, SOL_SOCKET, SO_TIMESTAMP_OLD,
 					 sizeof(tv), &tv);
 			}
 		}
-
-		if (sk->sk_tsflags & SOF_TIMESTAMPING_SOFTWARE)
-			has_timestamping = true;
-		else
-			tss->ts[0] = (struct timespec) {0};
 	}
+}
+
+/* Similar to __sock_recv_timestamp, but does not require an skb */
+static void tcp_recv_timestamp(struct msghdr *msg, const struct sock *sk,
+			       struct scm_timestamping *tss)
+{
+	bool has_timestamping = false;
+	struct timespec64 ts = timespec_to_timespec64(tss->ts[0]);
+
+	tcp_recv_sw_timestamp(msg, sk, &ts);
+
+	if (sk->sk_tsflags & SOF_TIMESTAMPING_SOFTWARE)
+		has_timestamping = true;
+	else
+		tss->ts[0] = (struct timespec) {0};
 
 	if (tss->ts[2].tv_sec || tss->ts[2].tv_nsec) {
 		if (sk->sk_tsflags & SOF_TIMESTAMPING_RAW_HARDWARE)

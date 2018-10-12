@@ -647,6 +647,35 @@ bool sk_mc_loop(struct sock *sk)
 }
 EXPORT_SYMBOL(sk_mc_loop);
 
+static void setsockopt_timestamp(struct sock *sk, int type, int val)
+{
+	if (!val) {
+		sock_reset_flag(sk, SOCK_RCVTSTAMP);
+		sock_reset_flag(sk, SOCK_RCVTSTAMPNS);
+		sock_reset_flag(sk, SOCK_TSTAMP_NEW);
+		return;
+	}
+
+	if (type == SO_TIMESTAMP_NEW || type == SO_TIMESTAMPNS_NEW)
+		sock_set_flag(sk, SOCK_TSTAMP_NEW);
+	else
+		sock_reset_flag(sk, SOCK_TSTAMP_NEW);
+
+	switch (type) {
+	case SO_TIMESTAMP_OLD:
+	case SO_TIMESTAMP_NEW:
+		sock_reset_flag(sk, SOCK_RCVTSTAMPNS);
+		break;
+	case SO_TIMESTAMPNS_OLD:
+	case SO_TIMESTAMPNS_NEW:
+		sock_set_flag(sk, SOCK_RCVTSTAMPNS);
+		break;
+	}
+
+	sock_set_flag(sk, SOCK_RCVTSTAMP);
+	sock_enable_timestamp(sk, SOCK_TIMESTAMP);
+}
+
 /*
  *	This is meant for all protocols to use and covers goings on
  *	at the socket level. Everything here is generic.
@@ -816,18 +845,10 @@ set_rcvbuf:
 		break;
 
 	case SO_TIMESTAMP_OLD:
+	case SO_TIMESTAMP_NEW:
 	case SO_TIMESTAMPNS_OLD:
-		if (valbool)  {
-			if (optname == SO_TIMESTAMP_OLD)
-				sock_reset_flag(sk, SOCK_RCVTSTAMPNS);
-			else
-				sock_set_flag(sk, SOCK_RCVTSTAMPNS);
-			sock_set_flag(sk, SOCK_RCVTSTAMP);
-			sock_enable_timestamp(sk, SOCK_TIMESTAMP);
-		} else {
-			sock_reset_flag(sk, SOCK_RCVTSTAMP);
-			sock_reset_flag(sk, SOCK_RCVTSTAMPNS);
-		}
+	case SO_TIMESTAMPNS_NEW:
+		setsockopt_timestamp(sk, optname, valbool);
 		break;
 
 	case SO_TIMESTAMPING_OLD:
@@ -1193,6 +1214,14 @@ int sock_getsockopt(struct socket *sock, int level, int optname,
 
 	case SO_TIMESTAMPNS_OLD:
 		v.val = sock_flag(sk, SOCK_RCVTSTAMPNS);
+		break;
+
+	case SO_TIMESTAMP_NEW:
+		v.val = sock_flag(sk, SOCK_RCVTSTAMP) && sock_flag(sk, SOCK_TSTAMP_NEW);
+		break;
+
+	case SO_TIMESTAMPNS_NEW:
+		v.val = sock_flag(sk, SOCK_RCVTSTAMPNS) && sock_flag(sk, SOCK_TSTAMP_NEW);
 		break;
 
 	case SO_TIMESTAMPING_OLD:
