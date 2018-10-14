@@ -352,6 +352,13 @@ extern int put_cmsg(struct msghdr*, int level, int type, int len, void *data);
 struct __kernel_timespec;
 struct old_timespec32;
 
+struct scm_timestamping_internal {
+	struct timespec64 ts[3];
+};
+
+extern void put_cmsg_scm_timestamping64(struct msghdr *msg, struct scm_timestamping_internal *tss);
+extern void put_cmsg_scm_timestamping(struct msghdr *msg, struct scm_timestamping_internal *tss);
+
 /* The __sys_...msg variants allow MSG_CMSG_COMPAT iff
  * forbid_cmsg_compat==false
  */
