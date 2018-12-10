@@ -351,8 +351,8 @@ static int do_set_attach_filter(struct socket *sock, int level, int optname,
 static int do_set_sock_timeout(struct socket *sock, int level,
 		int optname, char __user *optval, unsigned int optlen)
 {
-	struct compat_timeval __user *up = (struct compat_timeval __user *)optval;
-	struct timeval ktime;
+	struct old_timeval32 __user *up = (struct old_timeval32 __user *)optval;
+	struct __kernel_old_timeval ktime;
 	mm_segment_t old_fs;
 	int err;
 
@@ -420,12 +420,12 @@ COMPAT_SYSCALL_DEFINE5(setsockopt, int, fd, int, level, int, optname,
 static int do_get_sock_timeout(struct socket *sock, int level, int optname,
 		char __user *optval, int __user *optlen)
 {
-	struct compat_timeval __user *up;
-	struct timeval ktime;
+	struct old_timeval32 __user *up;
+	struct __kernel_old_timeval ktime;
 	mm_segment_t old_fs;
 	int len, err;
 
-	up = (struct compat_timeval __user *) optval;
+	up = (struct old_timeval32 __user *) optval;
 	if (get_user(len, optlen))
 		return -EFAULT;
 	if (len < sizeof(*up))

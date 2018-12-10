@@ -337,7 +337,7 @@ EXPORT_SYMBOL(__sk_backlog_rcv);
 
 static int sock_set_timeout(long *timeo_p, char __user *optval, int optlen)
 {
-	struct timeval tv;
+	struct __kernel_old_timeval tv;
 
 	if (optlen < sizeof(tv))
 		return -EINVAL;
@@ -1113,7 +1113,7 @@ int sock_getsockopt(struct socket *sock, int level, int optname,
 		int val;
 		u64 val64;
 		struct linger ling;
-		struct timeval tm;
+		struct __kernel_old_timeval tm;
 		struct sock_txtime txtime;
 	} v;
 
@@ -1223,7 +1223,7 @@ int sock_getsockopt(struct socket *sock, int level, int optname,
 		break;
 
 	case SO_RCVTIMEO:
-		lv = sizeof(struct timeval);
+		lv = sizeof(struct __kernel_old_timeval);
 		if (sk->sk_rcvtimeo == MAX_SCHEDULE_TIMEOUT) {
 			v.tm.tv_sec = 0;
 			v.tm.tv_usec = 0;
@@ -1234,7 +1234,7 @@ int sock_getsockopt(struct socket *sock, int level, int optname,
 		break;
 
 	case SO_SNDTIMEO:
-		lv = sizeof(struct timeval);
+		lv = sizeof(struct __kernel_old_timeval);
 		if (sk->sk_sndtimeo == MAX_SCHEDULE_TIMEOUT) {
 			v.tm.tv_sec = 0;
 			v.tm.tv_usec = 0;
