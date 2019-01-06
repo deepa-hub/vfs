@@ -52,7 +52,11 @@ struct usbtest_param_64 {
 
 	/* outputs */
 	__s64		duration_sec;
+#ifdef CONFIG_SPARC64
+	__u32		duration_usec;
+#else
 	__s64		duration_usec;
+#endif
 };
 
 /* IOCTL interface to the driver. */
