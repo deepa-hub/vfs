@@ -2,6 +2,11 @@
 #include <linux/fs.h>
 #include <linux/adfs_fs.h>
 
+/* Convert 40 bit centi seconds to seconds
+ * since 01 Jan 1900 00:00:00 (RISC OS epoch)
+ */
+#define ADFS_MAX_TIMESTAMP ((0xFFFFFFFFFFLL / 100 ) - 2208988800LL)
+
 /* Internal data structures for ADFS */
 
 #define ADFS_FREE_FRAG		 0
