@@ -170,11 +170,7 @@ static void
 adfs_adfs2unix_time(struct timespec64 *tv, struct inode *inode)
 {
 	unsigned int high, low;
-	/* 01 Jan 1970 00:00:00 (Unix epoch) as nanoseconds since
-	 * 01 Jan 1900 00:00:00 (RISC OS epoch)
-	 */
-	static const s64 nsec_unix_epoch_diff_risc_os_epoch =
-							2208988800000000000LL;
+	static const s64 nsec_unix_epoch_diff_risc_os_epoch = RISC_OS_EPOCH_DELTA * NSEC_PER_SEC;
 	s64 nsec;
 
 	if (ADFS_I(inode)->stamped == 0)
@@ -219,7 +215,7 @@ adfs_unix2adfs_time(struct inode *inode, unsigned int secs)
 	if (ADFS_I(inode)->stamped) {
 		/* convert 32-bit seconds to 40-bit centi-seconds */
 		low  = (secs & 255) * 100;
-		high = (secs / 256) * 100 + (low >> 8) + 0x336e996a;
+		high = (secs / 256) * 100 + (low >> 8) + (RISC_OS_EPOCH_DELTA*100/256);
 
 		ADFS_I(inode)->loadaddr = (high >> 24) |
 				(ADFS_I(inode)->loadaddr & ~0xff);

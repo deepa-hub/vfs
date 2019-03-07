@@ -449,6 +449,8 @@ static int adfs_fill_super(struct super_block *sb, void *data, int silent)
 	asb->s_size    		= adfs_discsize(dr, sb->s_blocksize_bits);
 	asb->s_version 		= dr->format_version;
 	asb->s_log2sharesize	= dr->log2sharesize;
+	sb->s_time_min		= 0;
+	sb->s_time_max		= ADFS_MAX_TIMESTAMP;
 
 	asb->s_map = adfs_read_map(sb, dr);
 	if (IS_ERR(asb->s_map)) {
