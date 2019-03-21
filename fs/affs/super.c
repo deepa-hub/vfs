@@ -25,6 +25,10 @@
 #include <linux/iversion.h>
 #include "affs.h"
 
+/* time in days, minutes, and ticks */
+#define AFFS_DATE_MAX ((U32_MAX+1)*86400 + AFFS_EPOCH_DELTA)
+#define AFFS_DATE_MIN AFFS_EPOCH_DELTA
+
 static int affs_statfs(struct dentry *dentry, struct kstatfs *buf);
 static int affs_show_options(struct seq_file *m, struct dentry *root);
 static int affs_remount (struct super_block *sb, int *flags, char *data);
@@ -354,6 +358,10 @@ static int affs_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_magic             = AFFS_SUPER_MAGIC;
 	sb->s_op                = &affs_sops;
 	sb->s_flags |= SB_NODIRATIME;
+
+	sb->s_time_gran = NSEC_PER_SEC;
+	sb->s_time_min = sys_tz.tz_minuteswest * 60 + AFFS_EPOCH_DELTA;
+	sb->s_time_max = (U32_MAX + 1) * 86400 + (86400 - 1) + sb->s_time_min;
 
 	sbi = kzalloc(sizeof(struct affs_sb_info), GFP_KERNEL);
 	if (!sbi)

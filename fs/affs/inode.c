@@ -153,7 +153,7 @@ struct inode *affs_iget(struct super_block *sb, unsigned long ino)
 		       = (be32_to_cpu(tail->change.days) * (24 * 60 * 60) +
 		         be32_to_cpu(tail->change.mins) * 60 +
 			 be32_to_cpu(tail->change.ticks) / 50 +
-			 ((8 * 365 + 2) * 24 * 60 * 60)) +
+			 AFFS_EPOCH_DELTA) +
 			 sys_tz.tz_minuteswest * 60;
 	inode->i_mtime.tv_nsec = inode->i_ctime.tv_nsec = inode->i_atime.tv_nsec = 0;
 	affs_brelse(bh);
