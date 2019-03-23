@@ -1064,6 +1064,8 @@ static int fill_super(struct super_block *sb, struct gfs2_args *args, int silent
 	sb->s_quota_types = QTYPE_MASK_USR | QTYPE_MASK_GRP;
 	sb_dqopt(sb)->flags |= DQUOT_QUOTA_SYS_FILE;
 	sb->s_time_gran = 1;
+	sb->s_time_min = 0;
+	sb->s_time_max = S64_MAX;
 	sb->s_maxbytes = MAX_LFS_FILESIZE;
 
 	/* Set up the buffer cache and fill in some fake block size values
