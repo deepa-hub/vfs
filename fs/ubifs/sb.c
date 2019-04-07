@@ -731,6 +731,8 @@ int ubifs_read_superblock(struct ubifs_info *c)
 		c->default_compr = le16_to_cpu(sup->default_compr);
 
 	c->vfs_sb->s_time_gran = le32_to_cpu(sup->time_gran);
+	c->vfs_sb->s_time_min = 0;
+	c->vfs_sb->s_time_max = S64_MAX;
 	memcpy(&c->uuid, &sup->uuid, 16);
 	c->big_lpt = !!(sup_flags & UBIFS_FLG_BIGLPT);
 	c->space_fixup = !!(sup_flags & UBIFS_FLG_SPACE_FIXUP);
