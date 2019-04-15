@@ -2811,8 +2811,17 @@ int finish_automount(struct vfsmount *m, struct path *path)
 	}
 
 	err = do_add_mount(mnt, path, path->mnt->mnt_flags | MNT_SHRINKABLE);
-	if (!err)
+	if (!err) {
+		struct super_block *sb = path->mnt->mnt_sb;
+		char buf[PATH_MAX];
+		char *dirname;
+
+		dirname = dentry_path(mnt->mnt_mountpoint, buf, PATH_MAX);
+		WARN(sb->s_time_max && (ktime_get_real_seconds() + TIME_UPTIME_SEC_MAX < sb->s_time_max),
+		"Mount: Automounted Filesystem %s at %s supports timestamps until %lld\n",
+		sb->s_type->name, dirname, sb->s_time_max);
 		return 0;
+	}
 fail:
 	/* remove m from any expiration list it may be on */
 	if (!list_empty(&mnt->mnt_expire)) {
@@ -3032,6 +3041,7 @@ long do_mount(const char *dev_name, const char __user *dir_name,
 	struct path path;
 	unsigned int mnt_flags = 0, sb_flags;
 	int retval = 0;
+	struct super_block *sb;
 
 	/* Discard magic */
 	if ((flags & MS_MGC_MSK) == MS_MGC_VAL)
@@ -3109,6 +3119,15 @@ long do_mount(const char *dev_name, const char __user *dir_name,
 	else
 		retval = do_new_mount(&path, type_page, sb_flags, mnt_flags,
 				      dev_name, data_page);
+	if (retval)
+		goto dput_out;
+
+	/* emit mount warning if mounting a filesystem with impending timestamp expiry */
+	sb = path.mnt->mnt_sb;
+	WARN(sb->s_time_max && (ktime_get_real_seconds() + TIME_UPTIME_SEC_MAX < sb->s_time_max),
+	"Mount: Filesystem %s mounted at %s supports timestamps until %lld\n",
+	sb->s_type->name, dir_name, sb->s_time_max);
+
 dput_out:
 	path_put(&path);
 	return retval;
