@@ -1149,6 +1149,7 @@ static ssize_t write_v4_end_grace(struct file *file, char *buf, size_t size)
 
 static int nfsd_fill_super(struct super_block * sb, void * data, int silent)
 {
+	int ret;
 	static const struct tree_descr nfsd_files[] = {
 		[NFSD_List] = {"exports", &exports_nfsd_operations, S_IRUGO},
 		[NFSD_Export_features] = {"export_features",
@@ -1178,7 +1179,17 @@ static int nfsd_fill_super(struct super_block * sb, void * data, int silent)
 		/* last one */ {""}
 	};
 	get_net(sb->s_fs_info);
-	return simple_fill_super(sb, 0x6e667364, nfsd_files);
+	ret = simple_fill_super(sb, 0x6e667364, nfsd_files);
+	if (ret)
+		return ret;
+
+	if (!IS_ENABLED(CONFIG_NFSD_V4)) {
+		sb->s_time_min = 0;
+		sb->s_time_max = U32_MAX;
+		sb->s_time_gran = 1000;
+	}
+
+	return 0;
 }
 
 static struct dentry *nfsd_mount(struct file_system_type *fs_type,
