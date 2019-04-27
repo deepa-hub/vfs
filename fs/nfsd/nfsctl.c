@@ -1177,7 +1177,17 @@ static int nfsd_fill_super(struct super_block * sb, void * data, int silent)
 		/* last one */ {""}
 	};
 	get_net(sb->s_fs_info);
-	return simple_fill_super(sb, 0x6e667364, nfsd_files);
+	ret = simple_fill_super(sb, 0x6e667364, nfsd_files);
+	if (ret)
+		return ret;
+
+	if (!is_enabled(CONFIG_NFSD_V4)) {
+		sb->s_time_min = 0;
+		sb->s_time_max = U32_MAX;
+		sb->s_time_gran = 1000;
+	}
+
+	return 0;
 }
 
 static struct dentry *nfsd_mount(struct file_system_type *fs_type,
