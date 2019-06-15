@@ -307,8 +307,9 @@ int fat_truncate_time(struct inode *inode, struct timespec64 *now, int flags)
 		inode->i_atime = (struct timespec64){ seconds, 0 };
 	}
 	if (flags & S_CTIME) {
-		if (sbi->options.isvfat)
-			inode->i_ctime = timespec64_trunc(*now, 10000000);
+		if (sbi->options.isvfat) {
+			inode->i_ctime = timestamp_truncate(*now, inode);
+		}
 		else
 			inode->i_ctime = fat_timespec64_trunc_2secs(*now);
 	}
