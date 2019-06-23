@@ -437,6 +437,10 @@ static int afs_fill_super(struct super_block *sb, struct afs_fs_context *ctx)
 	sb->s_blocksize_bits	= PAGE_SHIFT;
 	sb->s_magic		= AFS_FS_MAGIC;
 	sb->s_op		= &afs_super_ops;
+	sb->s_time_gran		= NSEC_PER_SEC;
+	sb->s_time_min		= 0;
+	sb->s_time_max		= U32_MAX;
+	/* todo: check for AFS_SERVER_FL_IS_YFS and apply yfs limits (100ns granularity and u64 sec) */
 	if (!as->dyn_root)
 		sb->s_xattr	= afs_xattr_handlers;
 	ret = super_setup_bdi(sb);
