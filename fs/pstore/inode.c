@@ -388,7 +388,9 @@ static int pstore_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_blocksize_bits	= PAGE_SHIFT;
 	sb->s_magic		= PSTOREFS_MAGIC;
 	sb->s_op		= &pstore_ops;
-	sb->s_time_gran		= 1;
+	sb->s_time_gran         = NSEC_PER_USEC;
+	sb->s_time_min		= S64_MIN;
+	sb->s_time_max		= S64_MAX;
 
 	parse_options(data);
 
