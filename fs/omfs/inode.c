@@ -135,7 +135,7 @@ static int __omfs_write_inode(struct inode *inode, int wait)
 	oi->i_size = cpu_to_be64(inode->i_size);
 
 	ctime = inode->i_ctime.tv_sec * 1000LL +
-		((inode->i_ctime.tv_nsec + 999)/1000);
+		DIV_ROUND_UP(inode->i_ctime.tv_nsec, NSEC_PER_MSEC);
 	oi->i_ctime = cpu_to_be64(ctime);
 
 	omfs_update_checksums(oi);
@@ -228,7 +228,7 @@ struct inode *omfs_iget(struct super_block *sb, ino_t ino)
 	inode->i_gid = sbi->s_gid;
 
 	ctime = be64_to_cpu(oi->i_ctime);
-	nsecs = do_div(ctime, 1000) * 1000L;
+	nsecs = do_div(ctime, 1000) * NSEC_PER_MSEC;
 
 	inode->i_atime.tv_sec = ctime;
 	inode->i_mtime.tv_sec = ctime;
@@ -477,6 +477,10 @@ static int omfs_fill_super(struct super_block *sb, void *data, int silent)
 		goto end;
 
 	sb->s_maxbytes = 0xffffffff;
+
+	sb->s_time_gran = NSEC_PER_MSEC;
+	sb->s_time_min = 0;
+	sb->s_time_max = U64_MAX / MSEC_PER_SEC;
 
 	sb_set_blocksize(sb, 0x200);
 
