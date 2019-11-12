@@ -491,8 +491,12 @@ static void pci_device_shutdown(struct device *dev)
 	 * If it is not a kexec reboot, firmware will hit the PCI
 	 * devices with big hammer and stop their DMA any way.
 	 */
-	if (kexec_in_progress && (pci_dev->current_state <= PCI_D3hot))
-		pci_clear_master(pci_dev);
+	if (kexec_in_progress) {
+		if (likely(pci_dev->current_state <= PCI_D3hot))
+			pci_clear_master(pci_dev);
+		else
+			dev_warn(dev, "Unable to turn off BME during kexec");
+	}
 }
 
 #ifdef CONFIG_PM
