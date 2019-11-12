@@ -453,6 +453,8 @@ static int pci_device_remove(struct device *dev)
 
 	/* Undo the runtime PM settings in local_pci_probe() */
 	pm_runtime_put_sync(dev);
+	/* Undo the PCI ACS settings in pci_init_capabilities() */
+	pci_disable_acs(pci_dev);
 
 	/*
 	 * If the device is still on, set the power state as "unknown",
@@ -496,6 +498,7 @@ static void pci_device_shutdown(struct device *dev)
 			pci_clear_master(pci_dev);
 		else
 			dev_warn(dev, "Unable to turn off BME during kexec");
+		pci_disable_acs(pci_dev);
 	}
 }
 

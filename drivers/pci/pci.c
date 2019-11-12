@@ -3261,15 +3261,23 @@ static void pci_disable_acs_redir(struct pci_dev *dev)
 	pci_info(dev, "disabled ACS redirect\n");
 }
 
+
+/* Standard PCI ACS capailities
+ * Source Validation | P2P Request Redirect | P2P Completion Redirect | Upstream Forwarding
+ */
+#define PCI_STD_ACS_CAP (PCI_ACS_SV | PCI_ACS_RR | PCI_ACS_CR | PCI_ACS_UF)
+
 /**
- * pci_std_enable_acs - enable ACS on devices using standard ACS capabilities
+ * pci_std_enable_disable_acs - enable/disable ACS on devices using standard
+ * ACS capabilities
  * @dev: the PCI device
  */
-static void pci_std_enable_acs(struct pci_dev *dev)
+static void pci_std_enable_disable_acs(struct pci_dev *dev, int enable)
 {
 	int pos;
 	u16 cap;
 	u16 ctrl;
+	u16 val = 0;
 
 	pos = pci_find_ext_capability(dev, PCI_EXT_CAP_ID_ACS);
 	if (!pos)
@@ -3278,19 +3286,26 @@ static void pci_std_enable_acs(struct pci_dev *dev)
 	pci_read_config_word(dev, pos + PCI_ACS_CAP, &cap);
 	pci_read_config_word(dev, pos + PCI_ACS_CTRL, &ctrl);
 
-	/* Source Validation */
-	ctrl |= (cap & PCI_ACS_SV);
+	val = (cap & PCI_STD_ACS_CAP);
 
-	/* P2P Request Redirect */
-	ctrl |= (cap & PCI_ACS_RR);
-
-	/* P2P Completion Redirect */
-	ctrl |= (cap & PCI_ACS_CR);
-
-	/* Upstream Forwarding */
-	ctrl |= (cap & PCI_ACS_UF);
+	if (enable)
+		ctrl |= val;
+	else
+		ctrl &= ~val;
 
 	pci_write_config_word(dev, pos + PCI_ACS_CTRL, ctrl);
+}
+
+/**
+ * pci_disable_acs - enable ACS if hardware support it
+ * @dev: the PCI device
+ */
+void pci_disable_acs(struct pci_dev *dev)
+{
+	if (pci_acs_enable)
+		pci_std_enable_disable_acs(dev, 0);
+
+	pci_disable_acs_redir(dev);
 }
 
 /**
@@ -3305,7 +3320,7 @@ void pci_enable_acs(struct pci_dev *dev)
 	if (!pci_dev_specific_enable_acs(dev))
 		goto disable_acs_redir;
 
-	pci_std_enable_acs(dev);
+	pci_std_enable_disable_acs(dev, 1);
 
 disable_acs_redir:
 	/*
